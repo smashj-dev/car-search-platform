@@ -13,14 +13,14 @@ import LoginModal from './components/LoginModal';
 import FilterModal from './components/FilterModal';
 import CarDetailModal from './components/CarDetailModal';
 import type { FilterOptions } from './types';
-import { searchListings, type Listing } from './api/client';
+import { searchListings, type Listing, type SearchResponse } from './api/client';
 
 function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCar, setSelectedCar] = useState<Listing | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [searchResults, setSearchResults] = useState<Listing[] | null>(null);
+  const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null);
   const [filters, setFilters] = useState<FilterOptions>({
     make: '',
     model: '',
@@ -72,7 +72,7 @@ function App() {
       }
 
       const response = await searchListings(params);
-      setSearchResults(response.data);
+      setSearchResponse(response);
 
       // Scroll to results
       setTimeout(() => {
@@ -83,8 +83,8 @@ function App() {
     }
   };
 
-  const handleSearch = (results: Listing[]) => {
-    setSearchResults(results);
+  const handleSearch = (response: SearchResponse) => {
+    setSearchResponse(response);
   };
 
   return (
@@ -105,7 +105,7 @@ function App() {
         />
         <FeaturedListings
           onCarClick={handleCarClick}
-          searchResults={searchResults}
+          searchResponse={searchResponse}
         />
         <HowItWorks />
         <Categories />

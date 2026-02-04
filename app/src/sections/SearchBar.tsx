@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Search, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { makes, models, years } from '@/data/cars';
 import type { FilterOptions } from '@/types';
-import { searchListings, type Listing } from '@/api/client';
+import { searchListings, type SearchResponse } from '@/api/client';
 
 interface SearchBarProps {
   filters: FilterOptions;
   onFilterChange: (filters: FilterOptions) => void;
   onFilterClick: () => void;
-  onSearch: (results: Listing[]) => void;
+  onSearch: (response: SearchResponse) => void;
 }
 
 export default function SearchBar({ filters, onFilterChange, onFilterClick, onSearch }: SearchBarProps) {
@@ -44,7 +44,7 @@ export default function SearchBar({ filters, onFilterChange, onFilterClick, onSe
       if (filters.year) params.year_min = parseInt(filters.year);
 
       const response = await searchListings(params);
-      onSearch(response.data);
+      onSearch(response);
 
       // Scroll to results
       document.getElementById('listings')?.scrollIntoView({ behavior: 'smooth' });

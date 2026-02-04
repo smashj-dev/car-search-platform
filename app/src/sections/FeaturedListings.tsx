@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { Heart, MapPin, Gauge, Fuel, Settings, Star, BadgeCheck, Sparkles } from 'lucide-react';
-import { searchListings, type Listing } from '../api/client';
+import { searchListings, type Listing, type SearchResponse } from '../api/client';
 
 interface FeaturedListingsProps {
   onCarClick: (car: Listing) => void;
-  searchResults?: Listing[] | null;
+  searchResponse?: SearchResponse | null;
 }
 
-export default function FeaturedListings({ onCarClick, searchResults }: FeaturedListingsProps) {
+export default function FeaturedListings({ onCarClick, searchResponse }: FeaturedListingsProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -32,25 +35,31 @@ export default function FeaturedListings({ onCarClick, searchResults }: Featured
     return () => observer.disconnect();
   }, []);
 
-  // Fetch listings from API or use search results
+  // Fetch listings from API or use search response
   useEffect(() => {
     async function loadListings() {
-      // If we have search results, use those
-      if (searchResults !== null && searchResults !== undefined) {
-        setListings(searchResults);
+      // If we have search response, use that
+      if (searchResponse !== null && searchResponse !== undefined) {
+        setListings(searchResponse.data);
+        setCurrentPage(searchResponse.meta.page);
+        setTotalPages(searchResponse.meta.total_pages);
+        setTotalResults(searchResponse.meta.total);
         setLoading(false);
         return;
       }
 
-      // Otherwise load default listings
+      // Otherwise load default listings with pagination
       try {
         setLoading(true);
         const response = await searchListings({
+          page: currentPage,
           per_page: 6,
           sort_by: 'price',
           sort_order: 'asc',
         });
         setListings(response.data);
+        setTotalPages(response.meta.total_pages);
+        setTotalResults(response.meta.total);
       } catch (error) {
         console.error('Error loading listings:', error);
       } finally {
@@ -59,7 +68,13 @@ export default function FeaturedListings({ onCarClick, searchResults }: Featured
     }
 
     loadListings();
-  }, [searchResults]);
+  }, [searchResponse, currentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    // Scroll to top of listings
+    sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const toggleFavorite = (e: React.MouseEvent, carId: string) => {
     e.stopPropagation();
@@ -101,14 +116,14 @@ export default function FeaturedListings({ onCarClick, searchResults }: Featured
             <div className="flex items-center gap-3 mb-3">
               <div className="w-12 h-1 bg-[#ff4600] rounded-full" />
               <span className="text-sm text-[#ff4600] font-medium uppercase tracking-wider">
-                {searchResults !== null ? 'Search Results' : 'Premium Selection'}
+                {searchResponse !== null ? 'Search Results' : 'Premium Selection'}
               </span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
-              {searchResults !== null ? `${listings.length} Cars Found` : 'Featured Listings'}
+              {searchResponse !== null ? `${totalResults} Cars Found` : 'Featured Listings'}
             </h2>
             <p className="text-gray-600 mt-2">
-              {searchResults !== null ? 'Matching your search criteria' : 'Latest vehicles from verified sellers'}
+              {searchResponse !== null ? 'Matching your search criteria' : 'Latest vehicles from verified sellers'}
             </p>
           </div>
           <a
@@ -232,6 +247,47 @@ export default function FeaturedListings({ onCarClick, searchResults }: Featured
             </div>
           ))}
         </div>
+
+        {/* Pagination */}
+        {!loading && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-12">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:border-[#ff4600] hover:text-[#ff4600] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:text-inherit"
+            >
+              Previous
+            </button>
+
+            <div className="flex items-center gap-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`w-10 h-10 rounded-lg transition-colors ${
+                    currentPage === page
+                      ? 'bg-[#ff4600] text-white'
+                      : 'border border-gray-300 hover:border-[#ff4600] hover:text-[#ff4600]'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:border-[#ff4600] hover:text-[#ff4600] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:text-inherit"
+            >
+              Next
+            </button>
+
+            <span className="ml-4 text-sm text-gray-600">
+              Page {currentPage} of {totalPages} ({totalResults} total cars)
+            </span>
+          </div>
+        )}
       </div>
     </section>
   );
