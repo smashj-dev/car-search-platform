@@ -1,0 +1,45 @@
+name = "car-search-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database for structured car data
+[[d1_databases]]
+binding = "DB"
+database_name = "car-search-db"
+database_id = "a5d6b92b-397b-49a7-a951-466faecd9445"
+
+# KV Namespace for hot cache (popular searches, recent queries)
+[[kv_namespaces]]
+binding = "CACHE"
+id = "placeholder-will-be-replaced-after-creation"
+
+# R2 Bucket for raw scrape data storage
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "kemi-scrapes"
+
+# AI binding for Cloudflare Workers AI
+[ai]
+binding = "AI"
+
+# Browser Rendering for scraping
+browser = { binding = "BROWSER" }
+
+# Environment variables (secrets added via wrangler secret put)
+[vars]
+ENVIRONMENT = "development"
+
+# Queue for background scraping jobs
+[[queues.producers]]
+binding = "SCRAPE_QUEUE"
+queue = "kemi-scrape-queue"
+
+[[queues.consumers]]
+queue = "kemi-scrape-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+
+# Email routing for notifications
+# [send_email]
+# Configured via Cloudflare dashboard for MailChannels integration
