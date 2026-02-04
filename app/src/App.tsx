@@ -13,7 +13,7 @@ import LoginModal from './components/LoginModal';
 import FilterModal from './components/FilterModal';
 import CarDetailModal from './components/CarDetailModal';
 import type { FilterOptions } from './types';
-import type { Listing } from './api/client';
+import { searchListings, type Listing } from './api/client';
 
 function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -46,8 +46,41 @@ function App() {
     setSelectedCar(car);
   };
 
-  const handleFilterChange = (newFilters: FilterOptions) => {
+  const handleFilterChange = async (newFilters: FilterOptions) => {
     setFilters(newFilters);
+
+    // Trigger search with new filters
+    try {
+      const params: any = {
+        per_page: 12,
+        sort_by: 'price',
+        sort_order: 'asc',
+      };
+
+      if (newFilters.make) params.make = newFilters.make;
+      if (newFilters.model) params.model = newFilters.model;
+      if (newFilters.year) params.year_min = parseInt(newFilters.year);
+      if (newFilters.minPrice > 0) params.price_min = newFilters.minPrice;
+      if (newFilters.maxPrice < 200000) params.price_max = newFilters.maxPrice;
+
+      // Map frontend filter names to backend params
+      if (newFilters.transmission && newFilters.transmission.length > 0) {
+        params.transmission = newFilters.transmission[0]; // API accepts single value
+      }
+      if (newFilters.fuelType && newFilters.fuelType.length > 0) {
+        params.fuel_type = newFilters.fuelType[0];
+      }
+
+      const response = await searchListings(params);
+      setSearchResults(response.data);
+
+      // Scroll to results
+      setTimeout(() => {
+        document.getElementById('listings')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } catch (error) {
+      console.error('Filter search error:', error);
+    }
   };
 
   const handleSearch = (results: Listing[]) => {
