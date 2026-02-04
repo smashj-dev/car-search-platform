@@ -4,9 +4,10 @@ import { searchListings, type Listing } from '../api/client';
 
 interface FeaturedListingsProps {
   onCarClick: (car: Listing) => void;
+  searchResults?: Listing[] | null;
 }
 
-export default function FeaturedListings({ onCarClick }: FeaturedListingsProps) {
+export default function FeaturedListings({ onCarClick, searchResults }: FeaturedListingsProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -31,9 +32,17 @@ export default function FeaturedListings({ onCarClick }: FeaturedListingsProps) 
     return () => observer.disconnect();
   }, []);
 
-  // Fetch listings from API
+  // Fetch listings from API or use search results
   useEffect(() => {
     async function loadListings() {
+      // If we have search results, use those
+      if (searchResults !== null && searchResults !== undefined) {
+        setListings(searchResults);
+        setLoading(false);
+        return;
+      }
+
+      // Otherwise load default listings
       try {
         setLoading(true);
         const response = await searchListings({
@@ -50,7 +59,7 @@ export default function FeaturedListings({ onCarClick }: FeaturedListingsProps) 
     }
 
     loadListings();
-  }, []);
+  }, [searchResults]);
 
   const toggleFavorite = (e: React.MouseEvent, carId: string) => {
     e.stopPropagation();
@@ -91,10 +100,16 @@ export default function FeaturedListings({ onCarClick }: FeaturedListingsProps) 
           <div>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-12 h-1 bg-[#ff4600] rounded-full" />
-              <span className="text-sm text-[#ff4600] font-medium uppercase tracking-wider">Premium Selection</span>
+              <span className="text-sm text-[#ff4600] font-medium uppercase tracking-wider">
+                {searchResults !== null ? 'Search Results' : 'Premium Selection'}
+              </span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold">Featured Listings</h2>
-            <p className="text-gray-600 mt-2">Latest vehicles from verified sellers</p>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
+              {searchResults !== null ? `${listings.length} Cars Found` : 'Featured Listings'}
+            </h2>
+            <p className="text-gray-600 mt-2">
+              {searchResults !== null ? 'Matching your search criteria' : 'Latest vehicles from verified sellers'}
+            </p>
           </div>
           <a
             href="#"

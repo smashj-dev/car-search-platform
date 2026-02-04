@@ -20,6 +20,7 @@ function App() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCar, setSelectedCar] = useState<Listing | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [searchResults, setSearchResults] = useState<Listing[] | null>(null);
   const [filters, setFilters] = useState<FilterOptions>({
     make: '',
     model: '',
@@ -49,6 +50,10 @@ function App() {
     setFilters(newFilters);
   };
 
+  const handleSearch = (results: Listing[]) => {
+    setSearchResults(results);
+  };
+
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
       <Header 
@@ -59,12 +64,16 @@ function App() {
       
       <main>
         <Hero />
-        <SearchBar 
+        <SearchBar
           filters={filters}
           onFilterChange={handleFilterChange}
           onFilterClick={() => setIsFilterOpen(true)}
+          onSearch={handleSearch}
         />
-        <FeaturedListings onCarClick={handleCarClick} />
+        <FeaturedListings
+          onCarClick={handleCarClick}
+          searchResults={searchResults}
+        />
         <HowItWorks />
         <Categories />
         <Testimonials />

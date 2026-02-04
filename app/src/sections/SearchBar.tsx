@@ -2,15 +2,18 @@ import { useState } from 'react';
 import { Search, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { makes, models, years } from '@/data/cars';
 import type { FilterOptions } from '@/types';
+import { searchListings, type Listing } from '@/api/client';
 
 interface SearchBarProps {
   filters: FilterOptions;
   onFilterChange: (filters: FilterOptions) => void;
   onFilterClick: () => void;
+  onSearch: (results: Listing[]) => void;
 }
 
-export default function SearchBar({ filters, onFilterChange, onFilterClick }: SearchBarProps) {
+export default function SearchBar({ filters, onFilterChange, onFilterClick, onSearch }: SearchBarProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   const handleMakeChange = (make: string) => {
     onFilterChange({ ...filters, make, model: '' });
@@ -25,6 +28,31 @@ export default function SearchBar({ filters, onFilterChange, onFilterClick }: Se
   const handleYearChange = (year: string) => {
     onFilterChange({ ...filters, year });
     setOpenDropdown(null);
+  };
+
+  const handleSearch = async () => {
+    try {
+      setIsSearching(true);
+      const params: any = {
+        per_page: 12,
+        sort_by: 'price',
+        sort_order: 'asc',
+      };
+
+      if (filters.make) params.make = filters.make;
+      if (filters.model) params.model = filters.model;
+      if (filters.year) params.year_min = parseInt(filters.year);
+
+      const response = await searchListings(params);
+      onSearch(response.data);
+
+      // Scroll to results
+      document.getElementById('listings')?.scrollIntoView({ behavior: 'smooth' });
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const availableModels = filters.make ? models[filters.make] || ['Any Model'] : ['Any Model'];
@@ -144,9 +172,13 @@ export default function SearchBar({ filters, onFilterChange, onFilterClick }: Se
               >
                 <SlidersHorizontal className="w-5 h-5" />
               </button>
-              <button className="flex-1 lg:flex-none btn-primary flex items-center justify-center gap-2">
-                <Search className="w-4 h-4" />
-                <span className="hidden sm:inline">Search</span>
+              <button
+                onClick={handleSearch}
+                disabled={isSearching}
+                className="flex-1 lg:flex-none btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Search className={`w-4 h-4 ${isSearching ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{isSearching ? 'Searching...' : 'Search'}</span>
               </button>
             </div>
           </div>

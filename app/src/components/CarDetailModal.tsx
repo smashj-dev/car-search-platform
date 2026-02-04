@@ -1,4 +1,4 @@
-import { X, MapPin, Gauge, Fuel, Settings, Calendar, BadgeCheck, Heart, Share2, Phone, Mail, Sparkles } from 'lucide-react';
+import { X, MapPin, Gauge, Fuel, Settings, Calendar, BadgeCheck, Heart, Share2, Phone, Sparkles } from 'lucide-react';
 import type { Listing } from '../api/client';
 
 interface CarDetailModalProps {
