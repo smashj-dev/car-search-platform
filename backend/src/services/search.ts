@@ -432,30 +432,30 @@ export class SearchService {
       .leftJoin(schema.dealers, eq(schema.listings.dealerId, schema.dealers.id))
       .where(and(...conditions));
 
-    // Get median price (using SQLite percentile approximation)
-    const [medianPrice] = await this.db
+    // Calculate median by fetching sorted prices (simpler for D1)
+    const prices = await this.db
       .select({
-        median: sql<number>`(
-          SELECT ${schema.listings.price}
-          FROM ${schema.listings}
-          LEFT JOIN ${schema.dealers} ON ${schema.listings.dealerId} = ${schema.dealers.id}
-          WHERE ${and(...conditions, sql`${schema.listings.price} IS NOT NULL`)}
-          ORDER BY ${schema.listings.price}
-          LIMIT 1
-          OFFSET (
-            SELECT COUNT(*) / 2
-            FROM ${schema.listings}
-            LEFT JOIN ${schema.dealers} ON ${schema.listings.dealerId} = ${schema.dealers.id}
-            WHERE ${and(...conditions, sql`${schema.listings.price} IS NOT NULL`)}
-          )
-        )`,
+        price: schema.listings.price,
       })
-      .from(sql`(SELECT 1)`);
+      .from(schema.listings)
+      .leftJoin(schema.dealers, eq(schema.listings.dealerId, schema.dealers.id))
+      .where(and(...conditions, sql`${schema.listings.price} IS NOT NULL`))
+      .orderBy(schema.listings.price);
+
+    let median = priceStats.avg;
+    if (prices.length > 0) {
+      const midpoint = Math.floor(prices.length / 2);
+      if (prices.length % 2 === 0) {
+        median = (prices[midpoint - 1].price + prices[midpoint].price) / 2;
+      } else {
+        median = prices[midpoint].price;
+      }
+    }
 
     return {
       price: {
         ...priceStats,
-        median: medianPrice?.median || priceStats.avg,
+        median,
       },
       miles: milesStats,
       year: yearStats,
@@ -463,89 +463,95 @@ export class SearchService {
   }
 
   private async getBuckets(conditions: any[]): Promise<any> {
-    // Price buckets
-    const priceBuckets = await this.db
+    // Price buckets - fetch raw prices and calculate buckets in JS (D1 doesn't support CASE in GROUP BY)
+    const prices = await this.db
       .select({
-        bucket: sql<string>`
-          CASE
-            WHEN ${schema.listings.price} < 20000 THEN 'Under $20k'
-            WHEN ${schema.listings.price} >= 20000 AND ${schema.listings.price} < 30000 THEN '$20k-$30k'
-            WHEN ${schema.listings.price} >= 30000 AND ${schema.listings.price} < 40000 THEN '$30k-$40k'
-            WHEN ${schema.listings.price} >= 40000 AND ${schema.listings.price} < 50000 THEN '$40k-$50k'
-            ELSE '$50k+'
-          END
-        `,
-        count: sql<number>`count(*)`,
+        price: schema.listings.price,
       })
       .from(schema.listings)
       .leftJoin(schema.dealers, eq(schema.listings.dealerId, schema.dealers.id))
-      .where(and(...conditions, sql`${schema.listings.price} IS NOT NULL`))
-      .groupBy(sql`bucket`)
-      .orderBy(
-        sql`CASE bucket
-          WHEN 'Under $20k' THEN 1
-          WHEN '$20k-$30k' THEN 2
-          WHEN '$30k-$40k' THEN 3
-          WHEN '$40k-$50k' THEN 4
-          ELSE 5
-        END`
-      );
+      .where(and(...conditions, sql`${schema.listings.price} IS NOT NULL`));
 
-    // Mileage buckets
-    const milesBuckets = await this.db
-      .select({
-        bucket: sql<string>`
-          CASE
-            WHEN ${schema.listings.miles} < 10000 THEN 'Under 10k'
-            WHEN ${schema.listings.miles} >= 10000 AND ${schema.listings.miles} < 25000 THEN '10k-25k'
-            WHEN ${schema.listings.miles} >= 25000 AND ${schema.listings.miles} < 50000 THEN '25k-50k'
-            WHEN ${schema.listings.miles} >= 50000 AND ${schema.listings.miles} < 75000 THEN '50k-75k'
-            ELSE '75k+'
-          END
-        `,
-        count: sql<number>`count(*)`,
-      })
-      .from(schema.listings)
-      .leftJoin(schema.dealers, eq(schema.listings.dealerId, schema.dealers.id))
-      .where(and(...conditions, sql`${schema.listings.miles} IS NOT NULL`))
-      .groupBy(sql`bucket`)
-      .orderBy(
-        sql`CASE bucket
-          WHEN 'Under 10k' THEN 1
-          WHEN '10k-25k' THEN 2
-          WHEN '25k-50k' THEN 3
-          WHEN '50k-75k' THEN 4
-          ELSE 5
-        END`
-      );
+    // Calculate price buckets
+    const priceBucketMap = new Map<string, number>();
+    for (const { price } of prices) {
+      let bucket: string;
+      if (price < 20000) bucket = 'Under $20k';
+      else if (price < 30000) bucket = '$20k-$30k';
+      else if (price < 40000) bucket = '$30k-$40k';
+      else if (price < 50000) bucket = '$40k-$50k';
+      else bucket = '$50k+';
 
-    // Year buckets
-    const yearBuckets = await this.db
+      priceBucketMap.set(bucket, (priceBucketMap.get(bucket) || 0) + 1);
+    }
+
+    // Convert to array and sort
+    const priceBuckets = Array.from(priceBucketMap.entries())
+      .map(([label, count]) => ({ bucket: label, count }))
+      .sort((a, b) => {
+        const order = ['Under $20k', '$20k-$30k', '$30k-$40k', '$40k-$50k', '$50k+'];
+        return order.indexOf(a.bucket) - order.indexOf(b.bucket);
+      });
+
+    // Mileage buckets - fetch raw miles and calculate buckets in JS
+    const miles = await this.db
       .select({
-        bucket: sql<string>`
-          CASE
-            WHEN ${schema.listings.year} = 2024 THEN '2024'
-            WHEN ${schema.listings.year} = 2023 THEN '2023'
-            WHEN ${schema.listings.year} = 2022 THEN '2022'
-            WHEN ${schema.listings.year} = 2021 THEN '2021'
-            ELSE '2020 and older'
-          END
-        `,
-        count: sql<number>`count(*)`,
+        miles: schema.listings.miles,
       })
       .from(schema.listings)
       .leftJoin(schema.dealers, eq(schema.listings.dealerId, schema.dealers.id))
-      .where(and(...conditions))
-      .groupBy(sql`bucket`)
-      .orderBy(
-        sql`CASE bucket
-          WHEN '2024' THEN 1
-          WHEN '2023' THEN 2
-          WHEN '2022' THEN 3
-          WHEN '2021' THEN 4
-          ELSE 5
-        END`
-      );
+      .where(and(...conditions, sql`${schema.listings.miles} IS NOT NULL`));
+
+    // Calculate miles buckets
+    const milesBucketMap = new Map<string, number>();
+    for (const { miles: m } of miles) {
+      let bucket: string;
+      if (m < 10000) bucket = 'Under 10k';
+      else if (m < 25000) bucket = '10k-25k';
+      else if (m < 50000) bucket = '25k-50k';
+      else if (m < 75000) bucket = '50k-75k';
+      else bucket = '75k+';
+
+      milesBucketMap.set(bucket, (milesBucketMap.get(bucket) || 0) + 1);
+    }
+
+    // Convert to array and sort
+    const milesBuckets = Array.from(milesBucketMap.entries())
+      .map(([label, count]) => ({ bucket: label, count }))
+      .sort((a, b) => {
+        const order = ['Under 10k', '10k-25k', '25k-50k', '50k-75k', '75k+'];
+        return order.indexOf(a.bucket) - order.indexOf(b.bucket);
+      });
+
+    // Year buckets - fetch raw years and calculate buckets in JS
+    const years = await this.db
+      .select({
+        year: schema.listings.year,
+      })
+      .from(schema.listings)
+      .leftJoin(schema.dealers, eq(schema.listings.dealerId, schema.dealers.id))
+      .where(and(...conditions));
+
+    // Calculate year buckets
+    const yearBucketMap = new Map<string, number>();
+    for (const { year } of years) {
+      let bucket: string;
+      if (year === 2024) bucket = '2024';
+      else if (year === 2023) bucket = '2023';
+      else if (year === 2022) bucket = '2022';
+      else if (year === 2021) bucket = '2021';
+      else bucket = '2020 and older';
+
+      yearBucketMap.set(bucket, (yearBucketMap.get(bucket) || 0) + 1);
+    }
+
+    // Convert to array and sort
+    const yearBuckets = Array.from(yearBucketMap.entries())
+      .map(([label, count]) => ({ bucket: label, count }))
+      .sort((a, b) => {
+        const order = ['2024', '2023', '2022', '2021', '2020 and older'];
+        return order.indexOf(a.bucket) - order.indexOf(b.bucket);
+      });
 
     return {
       price: priceBuckets.map(b => ({ label: b.bucket, count: b.count })),

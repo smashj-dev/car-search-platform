@@ -8,6 +8,9 @@ import { chatRouter } from './routes/chat';
 import { listingInsightsRouter } from './routes/listing-insights';
 import { marketRouter } from './routes/market';
 import { vinRouter } from './routes/vin';
+import { genesisRouter } from './routes/genesis';
+import * as schema from './db/schema';
+import { drizzle } from 'drizzle-orm/d1';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -269,6 +272,31 @@ app.route('/api/v1/market', marketRouter);
 app.route('/api/v1/scraper', scraperRouter);
 app.route('/api/v1/chat', chatRouter);
 app.route('/api/v1/vin', vinRouter);
+app.route('/api/v1/genesis', genesisRouter);
+
+// Dealers endpoint
+app.get('/api/v1/dealers', async (c) => {
+  try {
+    const db = drizzle(c.env.DB, { schema });
+    const dealers = await db.select()
+      .from(schema.dealers);
+
+    return c.json({
+      success: true,
+      data: dealers,
+      count: dealers.length,
+    });
+  } catch (error) {
+    console.error('Error fetching dealers:', error);
+    return c.json(
+      {
+        success: false,
+        error: 'Failed to fetch dealers',
+      },
+      500
+    );
+  }
+});
 
 // Admin endpoints for batch VIN processing
 app.post('/api/v1/admin/decode-vins', async (c) => {
