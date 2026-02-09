@@ -31,7 +31,8 @@ export async function scrapeCarsComSearch(
   make: string,
   model: string,
   zipCode: string,
-  radius: number = 100
+  radius: number = 100,
+  maxRetries: number = 3
 ): Promise<ScrapedListing[]> {
 
   const url = `https://www.cars.com/shopping/results/?` +
@@ -41,107 +42,229 @@ export async function scrapeCarsComSearch(
 
   console.log(`Scraping Cars.com: ${url}`);
 
-  try {
-    const browser = await puppeteer.launch(env.BROWSER);
-    const page = await browser.newPage();
+  let attempt = 0;
+  let lastError: Error | null = null;
 
-    // Set viewport
-    await page.setViewport({ width: 1920, height: 1080 });
+  while (attempt < maxRetries) {
+    attempt++;
 
-    // Navigate to search results
-    await page.goto(url, {
-      waitUntil: 'networkidle0',
-      timeout: 30000,
-    });
+    try {
+      // Rate limiting: wait 2-3 seconds between attempts
+      if (attempt > 1) {
+        const delay = 2000 + Math.random() * 1000; // 2-3 seconds
+        console.log(`Retry attempt ${attempt}/${maxRetries} after ${Math.round(delay)}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
 
-    // Wait for listings to load
-    await page.waitForSelector('.vehicle-card', { timeout: 10000 });
+      const browser = await puppeteer.launch(env.BROWSER);
+      const page = await browser.newPage();
 
-    // Extract listing data
-    const listings = await page.evaluate(() => {
-      const results: any[] = [];
-      const cards = document.querySelectorAll('.vehicle-card');
+      // Set realistic viewport and user agent
+      await page.setViewport({ width: 1920, height: 1080 });
+      await page.setUserAgent(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      );
 
-      cards.forEach((card) => {
-        try {
-          // VIN
-          const vinElement = card.querySelector('[data-vin]');
-          const vin = vinElement?.getAttribute('data-vin') || '';
-
-          if (!vin) return; // Skip if no VIN
-
-          // Title (contains year, make, model)
-          const titleElement = card.querySelector('.title');
-          const titleText = titleElement?.textContent?.trim() || '';
-          const titleParts = titleText.split(' ');
-          const year = parseInt(titleParts[0]) || 0;
-          const make = titleParts[1] || '';
-          const model = titleParts.slice(2).join(' ') || '';
-
-          // Price
-          const priceElement = card.querySelector('.primary-price');
-          const priceText = priceElement?.textContent?.replace(/[^0-9]/g, '') || '0';
-          const price = parseInt(priceText) || null;
-
-          // Mileage
-          const mileageElement = card.querySelector('.mileage');
-          const mileageText = mileageElement?.textContent?.replace(/[^0-9]/g, '') || '0';
-          const miles = parseInt(mileageText) || null;
-
-          // Condition
-          const stockTypeElement = card.querySelector('.stock-type');
-          const condition = stockTypeElement?.textContent?.toLowerCase().trim() || 'used';
-
-          // Image
-          const imageElement = card.querySelector('img');
-          const imageUrl = imageElement?.getAttribute('data-src') || imageElement?.getAttribute('src') || '';
-
-          // Dealer info
-          const dealerElement = card.querySelector('.dealer-name');
-          const dealerName = dealerElement?.textContent?.trim() || '';
-
-          const locationElement = card.querySelector('.miles-from');
-          const locationText = locationElement?.textContent?.trim() || '';
-          const locationParts = locationText.split(',');
-          const dealerCity = locationParts[0]?.trim() || '';
-          const dealerState = locationParts[1]?.trim() || '';
-
-          // Detail link
-          const linkElement = card.querySelector('a');
-          const sourceUrl = linkElement?.getAttribute('href') || '';
-          const fullUrl = sourceUrl.startsWith('http') ? sourceUrl : `https://www.cars.com${sourceUrl}`;
-
-          results.push({
-            vin,
-            year,
-            make,
-            model,
-            price,
-            miles,
-            condition,
-            imageUrl,
-            dealerName,
-            dealerCity,
-            dealerState,
-            sourceUrl: fullUrl,
-          });
-        } catch (error) {
-          console.error('Error parsing card:', error);
-        }
+      // Navigate to search results
+      await page.goto(url, {
+        waitUntil: 'networkidle2',
+        timeout: 30000,
       });
 
-      return results;
-    });
+      // Wait for listings to load - try multiple selectors
+      try {
+        await page.waitForSelector('.vehicle-card, [data-qa="vehicle-card"], .vehicle-cards-item', {
+          timeout: 15000
+        });
+      } catch (selectorError) {
+        console.warn('Primary selectors not found, checking for alternative content');
+      }
 
-    await browser.close();
+      // Check for anti-bot detection
+      const bodyText = await page.evaluate(() => document.body.textContent || '');
+      if (bodyText.includes('Access Denied') || bodyText.includes('captcha') || bodyText.includes('robot')) {
+        throw new Error('Anti-bot detection triggered');
+      }
 
-    console.log(`Scraped ${listings.length} listings from Cars.com`);
-    return listings;
+      // Extract listing data with multiple selector strategies
+      const listings = await page.evaluate(() => {
+        const results: any[] = [];
 
-  } catch (error) {
-    console.error(`Error scraping Cars.com:`, error);
-    return [];
+        // Try multiple selector patterns
+        const cardSelectors = [
+          '.vehicle-card',
+          '[data-qa="vehicle-card"]',
+          '.vehicle-cards-item',
+          'article[class*="vehicle"]'
+        ];
+
+        let cards: NodeListOf<Element> | null = null;
+        for (const selector of cardSelectors) {
+          cards = document.querySelectorAll(selector);
+          if (cards.length > 0) {
+            console.log(`Found ${cards.length} cards with selector: ${selector}`);
+            break;
+          }
+        }
+
+        if (!cards || cards.length === 0) {
+          console.warn('No vehicle cards found with any selector');
+          return results;
+        }
+
+        cards.forEach((card, index) => {
+          try {
+            // VIN - try multiple approaches
+            let vin = '';
+            const vinElement = card.querySelector('[data-vin]');
+            if (vinElement) {
+              vin = vinElement.getAttribute('data-vin') || '';
+            }
+
+            // Also check for VIN in link or data attributes
+            if (!vin) {
+              const linkElement = card.querySelector('a[href*="vehicledetail"]');
+              const href = linkElement?.getAttribute('href') || '';
+              const vinMatch = href.match(/vin[=\/]([A-HJ-NPR-Z0-9]{17})/i);
+              if (vinMatch) vin = vinMatch[1];
+            }
+
+            if (!vin) {
+              console.warn(`Card ${index}: No VIN found, skipping`);
+              return;
+            }
+
+            // Title (contains year, make, model) - try multiple selectors
+            const titleSelectors = ['.title', '[data-qa="title"]', 'h2', '.vehicle-card__title'];
+            let titleText = '';
+            for (const selector of titleSelectors) {
+              const el = card.querySelector(selector);
+              if (el?.textContent?.trim()) {
+                titleText = el.textContent.trim();
+                break;
+              }
+            }
+
+            const titleParts = titleText.split(' ');
+            const year = parseInt(titleParts[0]) || 0;
+            const make = titleParts[1] || '';
+            const model = titleParts.slice(2).join(' ') || '';
+
+            // Price - try multiple selectors
+            const priceSelectors = ['.primary-price', '[data-qa="price"]', '.price-section span'];
+            let priceText = '';
+            for (const selector of priceSelectors) {
+              const el = card.querySelector(selector);
+              if (el?.textContent) {
+                priceText = el.textContent.replace(/[^0-9]/g, '');
+                break;
+              }
+            }
+            const price = parseInt(priceText) || null;
+
+            // Mileage
+            const mileageSelectors = ['.mileage', '[data-qa="mileage"]', '.miles'];
+            let mileageText = '';
+            for (const selector of mileageSelectors) {
+              const el = card.querySelector(selector);
+              if (el?.textContent) {
+                mileageText = el.textContent.replace(/[^0-9]/g, '');
+                break;
+              }
+            }
+            const miles = parseInt(mileageText) || null;
+
+            // Condition
+            const stockTypeSelectors = ['.stock-type', '[data-qa="stock-type"]', '.badge'];
+            let condition = 'used';
+            for (const selector of stockTypeSelectors) {
+              const el = card.querySelector(selector);
+              if (el?.textContent) {
+                condition = el.textContent.toLowerCase().trim();
+                break;
+              }
+            }
+
+            // Image
+            const imageElement = card.querySelector('img');
+            const imageUrl = imageElement?.getAttribute('data-src') ||
+                            imageElement?.getAttribute('src') ||
+                            imageElement?.getAttribute('data-lazy') || '';
+
+            // Dealer info
+            const dealerSelectors = ['.dealer-name', '[data-qa="dealer-name"]', '.seller-name'];
+            let dealerName = '';
+            for (const selector of dealerSelectors) {
+              const el = card.querySelector(selector);
+              if (el?.textContent?.trim()) {
+                dealerName = el.textContent.trim();
+                break;
+              }
+            }
+
+            // Location
+            const locationSelectors = ['.miles-from', '[data-qa="miles-from"]', '.dealer-location'];
+            let locationText = '';
+            for (const selector of locationSelectors) {
+              const el = card.querySelector(selector);
+              if (el?.textContent?.trim()) {
+                locationText = el.textContent.trim();
+                break;
+              }
+            }
+            const locationParts = locationText.split(',');
+            const dealerCity = locationParts[0]?.trim() || '';
+            const dealerState = locationParts[1]?.trim() || '';
+
+            // Detail link
+            const linkElement = card.querySelector('a');
+            const sourceUrl = linkElement?.getAttribute('href') || '';
+            const fullUrl = sourceUrl.startsWith('http') ? sourceUrl : `https://www.cars.com${sourceUrl}`;
+
+            results.push({
+              vin,
+              year,
+              make,
+              model,
+              price,
+              miles,
+              condition,
+              imageUrl,
+              dealerName,
+              dealerCity,
+              dealerState,
+              sourceUrl: fullUrl,
+            });
+          } catch (error) {
+            console.error(`Error parsing card ${index}:`, error);
+          }
+        });
+
+        return results;
+      });
+
+      await browser.close();
+
+      console.log(`✓ Scraped ${listings.length} listings from Cars.com (attempt ${attempt})`);
+
+      if (listings.length === 0 && attempt < maxRetries) {
+        throw new Error('No listings found, retrying');
+      }
+
+      return listings;
+
+    } catch (error: any) {
+      lastError = error;
+      console.error(`✗ Error scraping Cars.com (attempt ${attempt}/${maxRetries}):`, error.message);
+
+      if (attempt >= maxRetries) {
+        console.error(`Failed after ${maxRetries} attempts:`, error);
+        throw error;
+      }
+    }
   }
+
+  throw lastError || new Error('Scraping failed');
 }
 
 export async function scrapeListingDetails(
@@ -252,11 +375,32 @@ export async function saveListingsToDB(env: Env, listings: ScrapedListing[]): Pr
             VALUES (?, ?, ?, ?, ?, 'cars.com', ?)
           `).bind(historyId, id, listing.vin, listing.price, listing.miles || null, now).run();
         }
+
+        // Auto-enrich with VIN data for new listings (background, don't wait)
+        enrichListingInBackground(env, listing.vin).catch((error) => {
+          console.warn(`VIN enrichment failed for ${listing.vin}:`, error.message);
+        });
       }
 
       console.log(`✓ Saved: ${listing.year} ${listing.make} ${listing.model} (${listing.vin})`);
     } catch (error) {
       console.error(`✗ Error saving listing ${listing.vin}:`, error);
     }
+  }
+}
+
+/**
+ * Enriches a listing with VIN data in the background
+ */
+async function enrichListingInBackground(env: Env, vin: string): Promise<void> {
+  const { enrichListingByVIN } = await import('../workers/batch-decode');
+
+  // Small delay to avoid overwhelming the NHTSA API
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  const result = await enrichListingByVIN(env, vin, false);
+
+  if (result.success && result.enrichedFields > 0) {
+    console.log(`  → Auto-enriched ${result.enrichedFields} field(s) for ${vin}`);
   }
 }

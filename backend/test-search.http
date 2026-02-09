@@ -1,0 +1,177 @@
+### Car Research - Advanced Search API Tests
+### Use with REST Client extension in VS Code or similar tools
+
+@baseUrl = http://localhost:8787/api/v1
+@prodUrl = https://your-worker.workers.dev/api/v1
+
+### 1. Basic Search - Find all Tesla vehicles
+GET {{baseUrl}}/listings?make=Tesla
+Content-Type: application/json
+
+### 2. Multi-Make Search - Tesla, Honda, Toyota
+GET {{baseUrl}}/listings?make=Tesla,Honda,Toyota&per_page=50
+Content-Type: application/json
+
+### 3. Price Range Search - $30k to $50k
+GET {{baseUrl}}/listings?price_min=30000&price_max=50000&sort_by=price&sort_order=asc
+Content-Type: application/json
+
+### 4. New Electric Vehicles
+GET {{baseUrl}}/listings?condition=new&fuel_type=electric
+Content-Type: application/json
+
+### 5. Low Mileage Certified Vehicles
+GET {{baseUrl}}/listings?condition=certified&miles_max=30000&sort_by=miles
+Content-Type: application/json
+
+### 6. Year Range Search - 2022 and newer
+GET {{baseUrl}}/listings?year_min=2022&sort_by=year&sort_order=desc
+Content-Type: application/json
+
+### 7. AWD Vehicles with Multiple Colors
+GET {{baseUrl}}/listings?drivetrain=awd&exterior_color=Black,White,Gray
+Content-Type: application/json
+
+### 8. Complex Multi-Filter Search
+# 2021+ AWD SUVs, priced $40k-$60k, under 25k miles, new or certified
+GET {{baseUrl}}/listings?year_min=2021&drivetrain=awd&price_min=40000&price_max=60000&miles_max=25000&condition=new,certified&sort_by=price
+Content-Type: application/json
+
+### 9. Geographic Search - Within 50 miles of 90210
+GET {{baseUrl}}/listings?zip_code=90210&radius=50&sort_by=distance
+Content-Type: application/json
+
+### 10. Manual Transmission Search (rare!)
+GET {{baseUrl}}/listings?transmission=manual&sort_by=year&sort_order=desc
+Content-Type: application/json
+
+### 11. Dealer Type Filter - Franchise Only
+GET {{baseUrl}}/listings?dealer_type=franchise&make=Tesla
+Content-Type: application/json
+
+### 12. Fast Search - No Facets
+GET {{baseUrl}}/listings?make=Honda&model=Civic&include_facets=false&include_stats=false&include_buckets=false
+Content-Type: application/json
+
+### 13. Pagination - Page 2
+GET {{baseUrl}}/listings?make=Toyota&page=2&per_page=25
+Content-Type: application/json
+
+### 14. Sort by Days on Lot
+GET {{baseUrl}}/listings?make=Genesis&sort_by=days_on_lot&sort_order=desc
+Content-Type: application/json
+
+### 15. Hybrid Vehicles with Interior Color
+GET {{baseUrl}}/listings?fuel_type=hybrid&interior_color=Black,Tan
+Content-Type: application/json
+
+### 16. Specific Model and Trim
+GET {{baseUrl}}/listings?make=Genesis&model=GV80&trim=Advanced,Prestige
+Content-Type: application/json
+
+### 17. Price Buckets - View distribution
+GET {{baseUrl}}/listings?make=Mercedes-Benz
+Content-Type: application/json
+
+### 18. Get Filter Options
+GET {{baseUrl}}/listings/filters/options
+Content-Type: application/json
+
+### 19. Get Specific Listing by VIN
+GET {{baseUrl}}/listings/1HGBH41JXMN109186
+Content-Type: application/json
+
+### 20. Get Price History for VIN
+GET {{baseUrl}}/listings/1HGBH41JXMN109186/history
+Content-Type: application/json
+
+### 21. Luxury Vehicles - High Price Range
+GET {{baseUrl}}/listings?price_min=70000&sort_by=price&sort_order=desc
+Content-Type: application/json
+
+### 22. Budget-Friendly - Under $20k
+GET {{baseUrl}}/listings?price_max=20000&condition=used&sort_by=price
+Content-Type: application/json
+
+### 23. Nearly New - Under 5k miles
+GET {{baseUrl}}/listings?miles_max=5000&condition=new&sort_by=miles
+Content-Type: application/json
+
+### 24. High Mileage Deals
+GET {{baseUrl}}/listings?miles_min=75000&price_max=15000&sort_by=price
+Content-Type: application/json
+
+### 25. All Wheel Drive Electric
+GET {{baseUrl}}/listings?drivetrain=awd&fuel_type=electric&sort_by=price
+Content-Type: application/json
+
+### 26. Geographic + Price Filter
+GET {{baseUrl}}/listings?zip_code=10001&radius=100&price_min=25000&price_max=40000&sort_by=distance
+Content-Type: application/json
+
+### 27. Latest Listings - 2024 Models
+GET {{baseUrl}}/listings?year_min=2024&year_max=2024&sort_by=days_on_lot&sort_order=asc
+Content-Type: application/json
+
+### 28. Franchise Dealers in Geographic Area
+GET {{baseUrl}}/listings?zip_code=60601&radius=25&dealer_type=franchise
+Content-Type: application/json
+
+### 29. Specific Make/Model/Year Combo
+GET {{baseUrl}}/listings?make=Genesis&model=GV80&year_min=2021&year_max=2021
+Content-Type: application/json
+
+### 30. Inventory Overview - Just Stats
+GET {{baseUrl}}/listings?include_facets=true&per_page=1
+Content-Type: application/json
+
+### CACHE MANAGEMENT
+
+### Invalidate Cache (requires auth token)
+POST {{baseUrl}}/listings/cache/invalidate
+Authorization: Bearer dev-token-change-in-production
+Content-Type: application/json
+
+### PERFORMANCE TESTING
+
+### Test 1 - Cold Cache (first request)
+GET {{baseUrl}}/listings?make=Tesla&model=Model%203
+Content-Type: application/json
+
+### Test 2 - Warm Cache (repeat immediately)
+GET {{baseUrl}}/listings?make=Tesla&model=Model%203
+Content-Type: application/json
+
+### Test 3 - Large Result Set
+GET {{baseUrl}}/listings?condition=used&per_page=100
+Content-Type: application/json
+
+### Test 4 - Complex Faceted Search (most expensive)
+GET {{baseUrl}}/listings?year_min=2020&drivetrain=awd,4wd&fuel_type=gas,hybrid&price_min=30000&price_max=60000
+Content-Type: application/json
+
+### EDGE CASES
+
+### Empty Result Set
+GET {{baseUrl}}/listings?make=Bugatti&price_max=50000
+Content-Type: application/json
+
+### Single Result
+GET {{baseUrl}}/listings?make=Tesla&model=Roadster&year_min=2023
+Content-Type: application/json
+
+### All Filters Applied
+GET {{baseUrl}}/listings?make=Honda&model=Civic&trim=Sport&year_min=2022&year_max=2023&price_min=25000&price_max=35000&miles_max=15000&condition=new,certified&exterior_color=Black&drivetrain=fwd&transmission=automatic&fuel_type=gas
+Content-Type: application/json
+
+### Invalid ZIP Code
+GET {{baseUrl}}/listings?zip_code=00000&radius=50
+Content-Type: application/json
+
+### Maximum Page Size
+GET {{baseUrl}}/listings?per_page=100&page=1
+Content-Type: application/json
+
+### Beyond Max Page Size (should limit to 100)
+GET {{baseUrl}}/listings?per_page=500&page=1
+Content-Type: application/json

@@ -139,6 +139,33 @@ export const savedSearches = sqliteTable('saved_searches', {
   updatedAt: text('updated_at'),
 });
 
+// Car profiles (for enthusiast insights)
+export const cars = sqliteTable('cars', {
+  id: text('id').primaryKey(),
+  make: text('make').notNull(),
+  model: text('model').notNull(),
+  year: integer('year').notNull(),
+  generation: text('generation'),
+  normalizedKey: text('normalized_key').notNull().unique(),
+  enrichmentStatus: text('enrichment_status').default('pending'),
+  createdAt: text('created_at'),
+  updatedAt: text('updated_at'),
+});
+
+// Car insights (enthusiast knowledge)
+export const carInsights = sqliteTable('car_insights', {
+  id: text('id').primaryKey(),
+  carId: text('car_id').notNull(),
+  category: text('category').notNull(),
+  insight: text('insight').notNull(),
+  sourceUrl: text('source_url'),
+  sourceName: text('source_name').notNull(),
+  confidenceScore: real('confidence_score').default(0.5),
+  sentiment: text('sentiment').default('neutral'),
+  createdAt: text('created_at'),
+  updatedAt: text('updated_at'),
+});
+
 // Type exports
 export type Listing = typeof listings.$inferSelect;
 export type NewListing = typeof listings.$inferInsert;
@@ -150,3 +177,7 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type UserFavorite = typeof userFavorites.$inferSelect;
 export type SavedSearch = typeof savedSearches.$inferSelect;
+export type Car = typeof cars.$inferSelect;
+export type NewCar = typeof cars.$inferInsert;
+export type CarInsight = typeof carInsights.$inferSelect;
+export type NewCarInsight = typeof carInsights.$inferInsert;

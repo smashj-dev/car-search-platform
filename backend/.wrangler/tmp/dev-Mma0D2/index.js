@@ -552,7 +552,7 @@ var init_write_stream = __esm({
       getColorDepth(env2) {
         return 1;
       }
-      hasColors(count3, env2) {
+      hasColors(count4, env2) {
         return false;
       }
       getWindowSize() {
@@ -4865,12 +4865,17 @@ params: ${params}`);
 });
 
 // node_modules/drizzle-orm/sql/functions/aggregate.js
+function count3(expression) {
+  return sql`count(${expression || sql.raw("*")})`.mapWith(Number);
+}
 var init_aggregate = __esm({
   "node_modules/drizzle-orm/sql/functions/aggregate.js"() {
     init_modules_watch_stub();
     init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
     init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
     init_performance2();
+    init_sql();
+    __name(count3, "count");
   }
 });
 
@@ -8153,6 +8158,8 @@ var init_drizzle_orm = __esm({
 // src/db/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
+  carInsights: () => carInsights,
+  cars: () => cars,
   dealers: () => dealers,
   listingPriceHistory: () => listingPriceHistory,
   listings: () => listings,
@@ -8160,7 +8167,7 @@ __export(schema_exports, {
   userFavorites: () => userFavorites,
   users: () => users
 });
-var listings, dealers, listingPriceHistory, users, userFavorites, savedSearches;
+var listings, dealers, listingPriceHistory, users, userFavorites, savedSearches, cars, carInsights;
 var init_schema = __esm({
   "src/db/schema.ts"() {
     "use strict";
@@ -8276,6 +8283,29 @@ var init_schema = __esm({
       // JSON
       notificationsEnabled: integer2("notifications_enabled").default(0),
       lastNotifiedAt: text("last_notified_at"),
+      createdAt: text("created_at"),
+      updatedAt: text("updated_at")
+    });
+    cars = sqliteTable("cars", {
+      id: text("id").primaryKey(),
+      make: text("make").notNull(),
+      model: text("model").notNull(),
+      year: integer2("year").notNull(),
+      generation: text("generation"),
+      normalizedKey: text("normalized_key").notNull().unique(),
+      enrichmentStatus: text("enrichment_status").default("pending"),
+      createdAt: text("created_at"),
+      updatedAt: text("updated_at")
+    });
+    carInsights = sqliteTable("car_insights", {
+      id: text("id").primaryKey(),
+      carId: text("car_id").notNull(),
+      category: text("category").notNull(),
+      insight: text("insight").notNull(),
+      sourceUrl: text("source_url"),
+      sourceName: text("source_name").notNull(),
+      confidenceScore: real("confidence_score").default(0.5),
+      sentiment: text("sentiment").default("neutral"),
       createdAt: text("created_at"),
       updatedAt: text("updated_at")
     });
@@ -9328,15 +9358,15 @@ function defaultIfEmpty(defaultValue) {
     }));
   });
 }
-function take(count3) {
-  return count3 <= 0 ? function() {
+function take(count4) {
+  return count4 <= 0 ? function() {
     return EMPTY;
   } : operate(function(source2, subscriber) {
     var seen = 0;
     source2.subscribe(createOperatorSubscriber(subscriber, function(value) {
-      if (++seen <= count3) {
+      if (++seen <= count4) {
         subscriber.next(value);
-        if (count3 <= seen) {
+        if (count4 <= seen) {
           subscriber.complete();
         }
       }
@@ -9411,8 +9441,8 @@ function retry(configOrCount) {
       count: configOrCount
     };
   }
-  var _a2 = config22.count, count3 = _a2 === void 0 ? Infinity : _a2, delay2 = config22.delay, _b = config22.resetOnSuccess, resetOnSuccess = _b === void 0 ? false : _b;
-  return count3 <= 0 ? identity : operate(function(source2, subscriber) {
+  var _a2 = config22.count, count4 = _a2 === void 0 ? Infinity : _a2, delay2 = config22.delay, _b = config22.resetOnSuccess, resetOnSuccess = _b === void 0 ? false : _b;
+  return count4 <= 0 ? identity : operate(function(source2, subscriber) {
     var soFar = 0;
     var innerSub;
     var subscribeForRetry = /* @__PURE__ */ __name(function() {
@@ -9423,7 +9453,7 @@ function retry(configOrCount) {
         }
         subscriber.next(value);
       }, void 0, function(err) {
-        if (soFar++ < count3) {
+        if (soFar++ < count4) {
           var resub_1 = /* @__PURE__ */ __name(function() {
             if (innerSub) {
               innerSub.unsubscribe();
@@ -16068,10 +16098,10 @@ var init_Connection = __esm({
       #closed = false;
       #manuallyAttached = /* @__PURE__ */ new Set();
       #callbacks = new CallbackRegistry();
-      constructor(url2, transport, delay = 0, timeout2) {
+      constructor(url2, transport, delay2 = 0, timeout2) {
         super();
         this.#url = url2;
-        this.#delay = delay;
+        this.#delay = delay2;
         this.#timeout = timeout2 ?? 18e4;
         this.#transport = transport;
         this.#transport.onmessage = this.onMessage.bind(this);
@@ -25399,14 +25429,14 @@ var init_Input2 = __esm({
         return !!_keyDefinitions[char];
       }
       async type(text2, options = {}) {
-        const delay = options.delay || void 0;
+        const delay2 = options.delay || void 0;
         for (const char of text2) {
           if (this.charIsKey(char)) {
-            await this.press(char, { delay });
+            await this.press(char, { delay: delay2 });
           } else {
-            if (delay) {
+            if (delay2) {
               await new Promise((f) => {
-                return setTimeout(f, delay);
+                return setTimeout(f, delay2);
               });
             }
             await this.sendCharacter(char);
@@ -25414,9 +25444,9 @@ var init_Input2 = __esm({
         }
       }
       async press(key, options = {}) {
-        const { delay = null } = options;
+        const { delay: delay2 = null } = options;
         await this.down(key, options);
-        if (delay) {
+        if (delay2) {
           await new Promise((f) => {
             return setTimeout(f, options.delay);
           });
@@ -25596,22 +25626,22 @@ var init_Input2 = __esm({
         });
       }
       async click(x, y, options = {}) {
-        const { delay, count: count3 = 1, clickCount = count3 } = options;
-        if (count3 < 1) {
+        const { delay: delay2, count: count4 = 1, clickCount = count4 } = options;
+        if (count4 < 1) {
           throw new Error("Click must occur a positive number of times.");
         }
         const actions = [this.move(x, y)];
-        if (clickCount === count3) {
-          for (let i = 1; i < count3; ++i) {
+        if (clickCount === count4) {
+          for (let i = 1; i < count4; ++i) {
             actions.push(this.down({ ...options, clickCount: i }), this.up({ ...options, clickCount: i }));
           }
         }
         actions.push(this.down({ ...options, clickCount }));
-        if (typeof delay === "number") {
+        if (typeof delay2 === "number") {
           await Promise.all(actions);
           actions.length = 0;
           await new Promise((resolve) => {
-            setTimeout(resolve, delay);
+            setTimeout(resolve, delay2);
           });
         }
         actions.push(this.up({ ...options, clickCount }));
@@ -25669,13 +25699,13 @@ var init_Input2 = __esm({
         });
       }
       async dragAndDrop(start, target, options = {}) {
-        const { delay = null } = options;
+        const { delay: delay2 = null } = options;
         const data = await this.drag(start, target);
         await this.dragEnter(target, data);
         await this.dragOver(target, data);
-        if (delay) {
+        if (delay2) {
           await new Promise((resolve) => {
-            return setTimeout(resolve, delay);
+            return setTimeout(resolve, delay2);
           });
         }
         await this.drop(target, data);
@@ -30090,6 +30120,689 @@ var init_puppeteer_cloudflare = __esm({
   }
 });
 
+// src/utils/vin-validator.ts
+function validateVIN(vin) {
+  const errors = [];
+  const normalizedVIN = vin.toUpperCase().trim();
+  if (normalizedVIN.length !== VIN_LENGTH) {
+    errors.push(`VIN must be exactly ${VIN_LENGTH} characters (got ${normalizedVIN.length})`);
+  }
+  for (const char of INVALID_CHARS) {
+    if (normalizedVIN.includes(char)) {
+      errors.push(`VIN cannot contain the letter '${char}' (looks like 1, 0, or O)`);
+    }
+  }
+  if (!/^[A-HJ-NPR-Z0-9]+$/.test(normalizedVIN)) {
+    errors.push("VIN must contain only letters (A-H, J-N, P-R, Z) and numbers (0-9)");
+  }
+  if (errors.length > 0) {
+    return {
+      isValid: false,
+      errors
+    };
+  }
+  const checkDigitValid = validateCheckDigit(normalizedVIN);
+  if (!checkDigitValid) {
+    errors.push("VIN check digit validation failed");
+  }
+  return {
+    isValid: errors.length === 0,
+    errors,
+    sanitizedVIN: normalizedVIN
+  };
+}
+function validateCheckDigit(vin) {
+  if (vin.length !== VIN_LENGTH) {
+    return false;
+  }
+  let sum = 0;
+  for (let i = 0; i < VIN_LENGTH; i++) {
+    const char = vin[i];
+    const value = TRANSLITERATION[char];
+    if (value === void 0) {
+      return false;
+    }
+    sum += value * WEIGHTS[i];
+  }
+  const checkDigit = sum % 11;
+  const expectedChar = checkDigit === 10 ? "X" : checkDigit.toString();
+  return vin[8] === expectedChar;
+}
+function parseVINBasics(vin) {
+  const validation = validateVIN(vin);
+  if (!validation.isValid || !validation.sanitizedVIN) {
+    return null;
+  }
+  const sanitized = validation.sanitizedVIN;
+  const wmi = sanitized.substring(0, 3);
+  const vds = sanitized.substring(3, 9);
+  const vis = sanitized.substring(9, 17);
+  const yearChar = sanitized[9];
+  const plantCode = sanitized[10];
+  const sequentialNumber = sanitized.substring(11, 17);
+  return {
+    wmi,
+    vds,
+    vis,
+    modelYear: YEAR_CODE[yearChar] || null,
+    plantCode,
+    sequentialNumber
+  };
+}
+function normalizeVIN(vin) {
+  return vin.toUpperCase().trim();
+}
+var VIN_LENGTH, INVALID_CHARS, WEIGHTS, TRANSLITERATION, YEAR_CODE;
+var init_vin_validator = __esm({
+  "src/utils/vin-validator.ts"() {
+    "use strict";
+    init_modules_watch_stub();
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+    init_performance2();
+    VIN_LENGTH = 17;
+    INVALID_CHARS = ["I", "O", "Q"];
+    WEIGHTS = [8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2];
+    TRANSLITERATION = {
+      A: 1,
+      B: 2,
+      C: 3,
+      D: 4,
+      E: 5,
+      F: 6,
+      G: 7,
+      H: 8,
+      J: 1,
+      K: 2,
+      L: 3,
+      M: 4,
+      N: 5,
+      P: 7,
+      R: 9,
+      S: 2,
+      T: 3,
+      U: 4,
+      V: 5,
+      W: 6,
+      X: 7,
+      Y: 8,
+      Z: 9,
+      "0": 0,
+      "1": 1,
+      "2": 2,
+      "3": 3,
+      "4": 4,
+      "5": 5,
+      "6": 6,
+      "7": 7,
+      "8": 8,
+      "9": 9
+    };
+    __name(validateVIN, "validateVIN");
+    __name(validateCheckDigit, "validateCheckDigit");
+    YEAR_CODE = {
+      A: 2010,
+      B: 2011,
+      C: 2012,
+      D: 2013,
+      E: 2014,
+      F: 2015,
+      G: 2016,
+      H: 2017,
+      J: 2018,
+      K: 2019,
+      L: 2020,
+      M: 2021,
+      N: 2022,
+      P: 2023,
+      R: 2024,
+      S: 2025,
+      T: 2026,
+      V: 2027,
+      W: 2028,
+      X: 2029,
+      Y: 2030,
+      // Numeric codes
+      "1": 2001,
+      "2": 2002,
+      "3": 2003,
+      "4": 2004,
+      "5": 2005,
+      "6": 2006,
+      "7": 2007,
+      "8": 2008,
+      "9": 2009
+    };
+    __name(parseVINBasics, "parseVINBasics");
+    __name(normalizeVIN, "normalizeVIN");
+  }
+});
+
+// src/services/vin-decoder.ts
+async function decodeVIN(env2, vin) {
+  const validation = validateVIN(vin);
+  if (!validation.isValid) {
+    return {
+      success: false,
+      error: {
+        code: "INVALID_VIN",
+        message: validation.errors.join(", ")
+      },
+      source: "api"
+    };
+  }
+  const sanitizedVIN = validation.sanitizedVIN;
+  const cacheKey = `vin:decoded:${sanitizedVIN}`;
+  try {
+    const cached2 = await env2.CACHE.get(cacheKey, "json");
+    if (cached2) {
+      return {
+        success: true,
+        data: cached2,
+        source: "cache"
+      };
+    }
+  } catch (error50) {
+    console.warn("Cache read error:", error50);
+  }
+  try {
+    const url2 = `${NHTSA_API_BASE}/vehicles/DecodeVin/${sanitizedVIN}?format=json`;
+    console.log(`Calling NHTSA API: ${url2}`);
+    const response = await fetch(url2, {
+      headers: {
+        "User-Agent": "CarSearchPlatform/1.0"
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`NHTSA API error: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    if (!data.Results || data.Results.length === 0) {
+      return {
+        success: false,
+        error: {
+          code: "NO_DATA",
+          message: "No data returned from NHTSA API"
+        },
+        source: "api"
+      };
+    }
+    const decodedData = parseNHTSAResponse(sanitizedVIN, data.Results);
+    try {
+      await env2.CACHE.put(cacheKey, JSON.stringify(decodedData), {
+        expirationTtl: CACHE_TTL
+      });
+    } catch (error50) {
+      console.warn("Cache write error:", error50);
+    }
+    return {
+      success: true,
+      data: decodedData,
+      source: "api"
+    };
+  } catch (error50) {
+    console.error("VIN decode error:", error50);
+    return {
+      success: false,
+      error: {
+        code: "API_ERROR",
+        message: error50.message || "Failed to decode VIN"
+      },
+      source: "api"
+    };
+  }
+}
+function parseNHTSAResponse(vin, results) {
+  const getValue = /* @__PURE__ */ __name((variableName) => {
+    const item = results.find((r) => r.Variable === variableName);
+    return item?.Value || null;
+  }, "getValue");
+  const getNumericValue = /* @__PURE__ */ __name((variableName) => {
+    const value = getValue(variableName);
+    if (!value) return null;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? null : parsed;
+  }, "getNumericValue");
+  const engineInfo = getValue("Engine Model") || getValue("Engine Configuration") || null;
+  const cylinders = getNumericValue("Engine Number of Cylinders");
+  const displacementCC = getNumericValue("Displacement (CC)");
+  const displacementL = getNumericValue("Displacement (L)");
+  let engine = null;
+  if (displacementL && cylinders) {
+    engine = `${displacementL}L ${cylinders}-Cylinder`;
+    if (engineInfo) {
+      engine += ` ${engineInfo}`;
+    }
+  } else if (engineInfo) {
+    engine = engineInfo;
+  }
+  const transmissionStyle = getValue("Transmission Style");
+  const transmissionSpeeds = getValue("Transmission Speeds");
+  let transmission = null;
+  if (transmissionStyle) {
+    transmission = transmissionStyle;
+    if (transmissionSpeeds) {
+      transmission = `${transmissionSpeeds}-Speed ${transmissionStyle}`;
+    }
+  }
+  const driveType = getValue("Drive Type");
+  let drivetrain = null;
+  if (driveType) {
+    const driveMap = {
+      "FWD": "FWD",
+      "Front-Wheel Drive": "FWD",
+      "RWD": "RWD",
+      "Rear-Wheel Drive": "RWD",
+      "AWD": "AWD",
+      "All-Wheel Drive": "AWD",
+      "4WD": "4WD",
+      "4X4": "4WD",
+      "Four-Wheel Drive": "4WD"
+    };
+    drivetrain = driveMap[driveType] || driveType;
+  }
+  const primaryFuel = getValue("Fuel Type - Primary");
+  let fuelType = null;
+  if (primaryFuel) {
+    const fuelMap = {
+      "Gasoline": "Gasoline",
+      "Diesel": "Diesel",
+      "Electric": "Electric",
+      "Plug-in Hybrid": "Plug-in Hybrid",
+      "Hybrid": "Hybrid",
+      "Flex Fuel": "Flex Fuel",
+      "Natural Gas": "Natural Gas"
+    };
+    fuelType = fuelMap[primaryFuel] || primaryFuel;
+  }
+  return {
+    vin,
+    make: getValue("Make"),
+    model: getValue("Model"),
+    year: getNumericValue("Model Year"),
+    trim: getValue("Trim") || getValue("Series"),
+    bodyType: getValue("Body Class"),
+    engine,
+    engineCylinders: cylinders,
+    engineDisplacementL: displacementL,
+    transmission,
+    drivetrain,
+    fuelType,
+    msrp: getNumericValue("Base Price") || getNumericValue("Suggested VIN"),
+    doors: getNumericValue("Doors"),
+    seatingCapacity: getNumericValue("Seats") || getNumericValue("Seating Capacity"),
+    vehicleType: getValue("Vehicle Type"),
+    plantCountry: getValue("Plant Country"),
+    manufacturer: getValue("Manufacturer Name"),
+    rawData: results
+  };
+}
+function compareVINData(scrapedData, vinData) {
+  const comparisons = [];
+  if (scrapedData.make) {
+    comparisons.push({
+      field: "make",
+      scrapedValue: scrapedData.make,
+      vinValue: vinData.make,
+      matches: scrapedData.make.toLowerCase() === vinData.make?.toLowerCase()
+    });
+  }
+  if (scrapedData.model) {
+    comparisons.push({
+      field: "model",
+      scrapedValue: scrapedData.model,
+      vinValue: vinData.model,
+      matches: scrapedData.model.toLowerCase() === vinData.model?.toLowerCase()
+    });
+  }
+  if (scrapedData.year) {
+    comparisons.push({
+      field: "year",
+      scrapedValue: scrapedData.year,
+      vinValue: vinData.year,
+      matches: scrapedData.year === vinData.year
+    });
+  }
+  return comparisons;
+}
+function planEnrichment(currentData, vinData) {
+  const plan = [];
+  const fieldsToCheck = [
+    { field: "engine", vinField: "engine" },
+    { field: "transmission", vinField: "transmission" },
+    { field: "drivetrain", vinField: "drivetrain" },
+    { field: "fuelType", vinField: "fuelType" },
+    { field: "bodyType", vinField: "bodyType" },
+    { field: "cylinders", vinField: "engineCylinders" },
+    { field: "doors", vinField: "doors" },
+    { field: "seatingCapacity", vinField: "seatingCapacity" },
+    { field: "baseMsrp", vinField: "msrp" }
+  ];
+  for (const { field, vinField } of fieldsToCheck) {
+    const currentValue = currentData[field];
+    const newValue = vinData[vinField];
+    let shouldEnrich = false;
+    let reason = "";
+    if (newValue === null || newValue === void 0) {
+      shouldEnrich = false;
+      reason = "No VIN data available";
+    } else if (currentValue === null || currentValue === void 0 || currentValue === "") {
+      shouldEnrich = true;
+      reason = "Missing data - will fill";
+    } else {
+      shouldEnrich = false;
+      reason = "Already has value - skip";
+    }
+    plan.push({
+      field,
+      currentValue,
+      newValue,
+      shouldEnrich,
+      reason
+    });
+  }
+  return plan;
+}
+var NHTSA_API_BASE, CACHE_TTL;
+var init_vin_decoder = __esm({
+  "src/services/vin-decoder.ts"() {
+    "use strict";
+    init_modules_watch_stub();
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+    init_performance2();
+    init_vin_validator();
+    NHTSA_API_BASE = "https://vpic.nhtsa.dot.gov/api";
+    CACHE_TTL = 60 * 60 * 24 * 365;
+    __name(decodeVIN, "decodeVIN");
+    __name(parseNHTSAResponse, "parseNHTSAResponse");
+    __name(compareVINData, "compareVINData");
+    __name(planEnrichment, "planEnrichment");
+  }
+});
+
+// src/workers/batch-decode.ts
+var batch_decode_exports = {};
+__export(batch_decode_exports, {
+  batchDecodeListings: () => batchDecodeListings,
+  enrichListingByVIN: () => enrichListingByVIN
+});
+async function batchDecodeListings(env2, config4 = {}) {
+  const startTime = Date.now();
+  const cfg = { ...DEFAULT_CONFIG, ...config4 };
+  const db = drizzle(env2.DB, { schema: schema_exports });
+  const result = {
+    totalListings: 0,
+    processedCount: 0,
+    enrichedCount: 0,
+    failedCount: 0,
+    skippedCount: 0,
+    errors: [],
+    enrichedFields: {},
+    durationMs: 0
+  };
+  console.log("Starting batch VIN decode...");
+  console.log("Config:", cfg);
+  const listingsWithMissingSpecs = await db.select({
+    id: listings.id,
+    vin: listings.vin,
+    year: listings.year,
+    make: listings.make,
+    model: listings.model,
+    engine: listings.engine,
+    transmission: listings.transmission,
+    drivetrain: listings.drivetrain,
+    fuelType: listings.fuelType,
+    bodyType: listings.bodyType,
+    cylinders: listings.cylinders,
+    doors: listings.doors,
+    seatingCapacity: listings.seatingCapacity,
+    baseMsrp: listings.baseMsrp
+  }).from(listings).where(
+    or(
+      isNull(listings.engine),
+      isNull(listings.transmission),
+      isNull(listings.drivetrain),
+      isNull(listings.fuelType),
+      isNull(listings.bodyType),
+      isNull(listings.cylinders)
+    )
+  );
+  result.totalListings = listingsWithMissingSpecs.length;
+  console.log(`Found ${result.totalListings} listings with missing specs`);
+  if (result.totalListings === 0) {
+    result.durationMs = Date.now() - startTime;
+    return result;
+  }
+  const batches = Math.ceil(listingsWithMissingSpecs.length / cfg.batchSize);
+  for (let i = 0; i < listingsWithMissingSpecs.length; i += cfg.batchSize) {
+    const batch = listingsWithMissingSpecs.slice(i, i + cfg.batchSize);
+    const batchNum = Math.floor(i / cfg.batchSize) + 1;
+    console.log(`Processing batch ${batchNum}/${batches} (${batch.length} listings)`);
+    for (const listing of batch) {
+      result.processedCount++;
+      try {
+        const vinResult = await decodeVIN(env2, listing.vin);
+        if (!vinResult.success) {
+          result.failedCount++;
+          result.errors.push({
+            vin: listing.vin,
+            error: vinResult.error?.message || "Unknown error"
+          });
+          console.log(`  \u2717 ${listing.vin}: ${vinResult.error?.message}`);
+          continue;
+        }
+        const vinData = vinResult.data;
+        const updates = {};
+        let enrichedFieldCount = 0;
+        if (!listing.engine && vinData.engine) {
+          updates.engine = vinData.engine;
+          enrichedFieldCount++;
+          result.enrichedFields.engine = (result.enrichedFields.engine || 0) + 1;
+        }
+        if (!listing.transmission && vinData.transmission) {
+          updates.transmission = vinData.transmission;
+          enrichedFieldCount++;
+          result.enrichedFields.transmission = (result.enrichedFields.transmission || 0) + 1;
+        }
+        if (!listing.drivetrain && vinData.drivetrain) {
+          updates.drivetrain = vinData.drivetrain;
+          enrichedFieldCount++;
+          result.enrichedFields.drivetrain = (result.enrichedFields.drivetrain || 0) + 1;
+        }
+        if (!listing.fuelType && vinData.fuelType) {
+          updates.fuelType = vinData.fuelType;
+          enrichedFieldCount++;
+          result.enrichedFields.fuelType = (result.enrichedFields.fuelType || 0) + 1;
+        }
+        if (!listing.bodyType && vinData.bodyType) {
+          updates.bodyType = vinData.bodyType;
+          enrichedFieldCount++;
+          result.enrichedFields.bodyType = (result.enrichedFields.bodyType || 0) + 1;
+        }
+        if (!listing.cylinders && vinData.engineCylinders) {
+          updates.cylinders = vinData.engineCylinders;
+          enrichedFieldCount++;
+          result.enrichedFields.cylinders = (result.enrichedFields.cylinders || 0) + 1;
+        }
+        if (!listing.doors && vinData.doors) {
+          updates.doors = vinData.doors;
+          enrichedFieldCount++;
+          result.enrichedFields.doors = (result.enrichedFields.doors || 0) + 1;
+        }
+        if (!listing.seatingCapacity && vinData.seatingCapacity) {
+          updates.seatingCapacity = vinData.seatingCapacity;
+          enrichedFieldCount++;
+          result.enrichedFields.seatingCapacity = (result.enrichedFields.seatingCapacity || 0) + 1;
+        }
+        if (!listing.baseMsrp && vinData.msrp) {
+          updates.baseMsrp = vinData.msrp;
+          enrichedFieldCount++;
+          result.enrichedFields.baseMsrp = (result.enrichedFields.baseMsrp || 0) + 1;
+        }
+        if (enrichedFieldCount === 0) {
+          result.skippedCount++;
+          console.log(`  - ${listing.vin}: No fields to enrich`);
+          continue;
+        }
+        if (!cfg.dryRun) {
+          const now = (/* @__PURE__ */ new Date()).toISOString();
+          updates.updatedAt = now;
+          const setClause = Object.keys(updates).map((key) => {
+            const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+            return `${snakeKey} = ?`;
+          }).join(", ");
+          const values = Object.values(updates);
+          values.push(listing.vin);
+          await env2.DB.prepare(`
+            UPDATE listings
+            SET ${setClause}
+            WHERE vin = ?
+          `).bind(...values).run();
+          const cacheKey = `listing:${listing.vin}`;
+          await env2.CACHE.delete(cacheKey);
+        }
+        result.enrichedCount++;
+        console.log(
+          `  \u2713 ${listing.vin}: Enriched ${enrichedFieldCount} field(s) ${cfg.dryRun ? "(dry run)" : ""}`
+        );
+        if (cfg.delayBetweenRequestsMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, cfg.delayBetweenRequestsMs));
+        }
+      } catch (error50) {
+        result.failedCount++;
+        result.errors.push({
+          vin: listing.vin,
+          error: error50.message || "Unknown error"
+        });
+        console.error(`  \u2717 ${listing.vin}:`, error50);
+      }
+    }
+    if (i + cfg.batchSize < listingsWithMissingSpecs.length && cfg.delayBetweenBatchesMs > 0) {
+      console.log(`Waiting ${cfg.delayBetweenBatchesMs}ms before next batch...`);
+      await new Promise((resolve) => setTimeout(resolve, cfg.delayBetweenBatchesMs));
+    }
+  }
+  result.durationMs = Date.now() - startTime;
+  console.log("\nBatch decode complete!");
+  console.log(`Total: ${result.totalListings}`);
+  console.log(`Processed: ${result.processedCount}`);
+  console.log(`Enriched: ${result.enrichedCount}`);
+  console.log(`Skipped: ${result.skippedCount}`);
+  console.log(`Failed: ${result.failedCount}`);
+  console.log(`Duration: ${(result.durationMs / 1e3).toFixed(1)}s`);
+  console.log("Enriched fields:", result.enrichedFields);
+  return result;
+}
+async function enrichListingByVIN(env2, vin, force = false) {
+  const db = drizzle(env2.DB, { schema: schema_exports });
+  const normalizedVIN = normalizeVIN(vin);
+  const listing = await db.query.listings.findFirst({
+    where: eq(listings.vin, normalizedVIN)
+  });
+  if (!listing) {
+    return {
+      success: false,
+      enrichedFields: 0,
+      updates: {},
+      error: "Listing not found"
+    };
+  }
+  const vinResult = await decodeVIN(env2, normalizedVIN);
+  if (!vinResult.success) {
+    return {
+      success: false,
+      enrichedFields: 0,
+      updates: {},
+      error: vinResult.error?.message || "Failed to decode VIN"
+    };
+  }
+  const vinData = vinResult.data;
+  const updates = {};
+  let enrichedFieldCount = 0;
+  if ((force || !listing.engine) && vinData.engine) {
+    updates.engine = vinData.engine;
+    enrichedFieldCount++;
+  }
+  if ((force || !listing.transmission) && vinData.transmission) {
+    updates.transmission = vinData.transmission;
+    enrichedFieldCount++;
+  }
+  if ((force || !listing.drivetrain) && vinData.drivetrain) {
+    updates.drivetrain = vinData.drivetrain;
+    enrichedFieldCount++;
+  }
+  if ((force || !listing.fuelType) && vinData.fuelType) {
+    updates.fuelType = vinData.fuelType;
+    enrichedFieldCount++;
+  }
+  if ((force || !listing.bodyType) && vinData.bodyType) {
+    updates.bodyType = vinData.bodyType;
+    enrichedFieldCount++;
+  }
+  if ((force || !listing.cylinders) && vinData.engineCylinders) {
+    updates.cylinders = vinData.engineCylinders;
+    enrichedFieldCount++;
+  }
+  if ((force || !listing.doors) && vinData.doors) {
+    updates.doors = vinData.doors;
+    enrichedFieldCount++;
+  }
+  if ((force || !listing.seatingCapacity) && vinData.seatingCapacity) {
+    updates.seatingCapacity = vinData.seatingCapacity;
+    enrichedFieldCount++;
+  }
+  if ((force || !listing.baseMsrp) && vinData.msrp) {
+    updates.baseMsrp = vinData.msrp;
+    enrichedFieldCount++;
+  }
+  if (enrichedFieldCount > 0) {
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    updates.updatedAt = now;
+    const setClause = Object.keys(updates).map((key) => {
+      const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+      return `${snakeKey} = ?`;
+    }).join(", ");
+    const values = Object.values(updates);
+    values.push(normalizedVIN);
+    await env2.DB.prepare(`
+      UPDATE listings
+      SET ${setClause}
+      WHERE vin = ?
+    `).bind(...values).run();
+    const cacheKey = `listing:${normalizedVIN}`;
+    await env2.CACHE.delete(cacheKey);
+  }
+  return {
+    success: true,
+    enrichedFields: enrichedFieldCount,
+    updates
+  };
+}
+var DEFAULT_CONFIG;
+var init_batch_decode = __esm({
+  "src/workers/batch-decode.ts"() {
+    "use strict";
+    init_modules_watch_stub();
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+    init_performance2();
+    init_d1();
+    init_drizzle_orm();
+    init_schema();
+    init_vin_decoder();
+    init_vin_validator();
+    DEFAULT_CONFIG = {
+      batchSize: 10,
+      delayBetweenBatchesMs: 2e3,
+      delayBetweenRequestsMs: 500,
+      dryRun: false
+    };
+    __name(batchDecodeListings, "batchDecodeListings");
+    __name(enrichListingByVIN, "enrichListingByVIN");
+  }
+});
+
 // src/services/scraper-cars-com.ts
 var scraper_cars_com_exports = {};
 __export(scraper_cars_com_exports, {
@@ -30097,79 +30810,181 @@ __export(scraper_cars_com_exports, {
   scrapeCarsComSearch: () => scrapeCarsComSearch,
   scrapeListingDetails: () => scrapeListingDetails
 });
-async function scrapeCarsComSearch(env2, make, model, zipCode, radius = 100) {
+async function scrapeCarsComSearch(env2, make, model, zipCode, radius = 100, maxRetries = 3) {
   const url2 = `https://www.cars.com/shopping/results/?stock_type=all&makes[]=${encodeURIComponent(make)}&models[]=${encodeURIComponent(`${make}-${model}`)}&list_price_max=&maximum_distance=${radius}&zip=${zipCode}`;
   console.log(`Scraping Cars.com: ${url2}`);
-  try {
-    const browser = await puppeteer_cloudflare_default.launch(env2.BROWSER);
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1920, height: 1080 });
-    await page.goto(url2, {
-      waitUntil: "networkidle0",
-      timeout: 3e4
-    });
-    await page.waitForSelector(".vehicle-card", { timeout: 1e4 });
-    const listings2 = await page.evaluate(() => {
-      const results = [];
-      const cards = document.querySelectorAll(".vehicle-card");
-      cards.forEach((card) => {
-        try {
-          const vinElement = card.querySelector("[data-vin]");
-          const vin = vinElement?.getAttribute("data-vin") || "";
-          if (!vin) return;
-          const titleElement = card.querySelector(".title");
-          const titleText = titleElement?.textContent?.trim() || "";
-          const titleParts = titleText.split(" ");
-          const year = parseInt(titleParts[0]) || 0;
-          const make2 = titleParts[1] || "";
-          const model2 = titleParts.slice(2).join(" ") || "";
-          const priceElement = card.querySelector(".primary-price");
-          const priceText = priceElement?.textContent?.replace(/[^0-9]/g, "") || "0";
-          const price = parseInt(priceText) || null;
-          const mileageElement = card.querySelector(".mileage");
-          const mileageText = mileageElement?.textContent?.replace(/[^0-9]/g, "") || "0";
-          const miles = parseInt(mileageText) || null;
-          const stockTypeElement = card.querySelector(".stock-type");
-          const condition = stockTypeElement?.textContent?.toLowerCase().trim() || "used";
-          const imageElement = card.querySelector("img");
-          const imageUrl = imageElement?.getAttribute("data-src") || imageElement?.getAttribute("src") || "";
-          const dealerElement = card.querySelector(".dealer-name");
-          const dealerName = dealerElement?.textContent?.trim() || "";
-          const locationElement = card.querySelector(".miles-from");
-          const locationText = locationElement?.textContent?.trim() || "";
-          const locationParts = locationText.split(",");
-          const dealerCity = locationParts[0]?.trim() || "";
-          const dealerState = locationParts[1]?.trim() || "";
-          const linkElement = card.querySelector("a");
-          const sourceUrl = linkElement?.getAttribute("href") || "";
-          const fullUrl = sourceUrl.startsWith("http") ? sourceUrl : `https://www.cars.com${sourceUrl}`;
-          results.push({
-            vin,
-            year,
-            make: make2,
-            model: model2,
-            price,
-            miles,
-            condition,
-            imageUrl,
-            dealerName,
-            dealerCity,
-            dealerState,
-            sourceUrl: fullUrl
-          });
-        } catch (error50) {
-          console.error("Error parsing card:", error50);
-        }
+  let attempt = 0;
+  let lastError = null;
+  while (attempt < maxRetries) {
+    attempt++;
+    try {
+      if (attempt > 1) {
+        const delay2 = 2e3 + Math.random() * 1e3;
+        console.log(`Retry attempt ${attempt}/${maxRetries} after ${Math.round(delay2)}ms`);
+        await new Promise((resolve) => setTimeout(resolve, delay2));
+      }
+      const browser = await puppeteer_cloudflare_default.launch(env2.BROWSER);
+      const page = await browser.newPage();
+      await page.setViewport({ width: 1920, height: 1080 });
+      await page.setUserAgent(
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      );
+      await page.goto(url2, {
+        waitUntil: "networkidle2",
+        timeout: 3e4
       });
-      return results;
-    });
-    await browser.close();
-    console.log(`Scraped ${listings2.length} listings from Cars.com`);
-    return listings2;
-  } catch (error50) {
-    console.error(`Error scraping Cars.com:`, error50);
-    return [];
+      try {
+        await page.waitForSelector('.vehicle-card, [data-qa="vehicle-card"], .vehicle-cards-item', {
+          timeout: 15e3
+        });
+      } catch (selectorError) {
+        console.warn("Primary selectors not found, checking for alternative content");
+      }
+      const bodyText = await page.evaluate(() => document.body.textContent || "");
+      if (bodyText.includes("Access Denied") || bodyText.includes("captcha") || bodyText.includes("robot")) {
+        throw new Error("Anti-bot detection triggered");
+      }
+      const listings2 = await page.evaluate(() => {
+        const results = [];
+        const cardSelectors = [
+          ".vehicle-card",
+          '[data-qa="vehicle-card"]',
+          ".vehicle-cards-item",
+          'article[class*="vehicle"]'
+        ];
+        let cards = null;
+        for (const selector of cardSelectors) {
+          cards = document.querySelectorAll(selector);
+          if (cards.length > 0) {
+            console.log(`Found ${cards.length} cards with selector: ${selector}`);
+            break;
+          }
+        }
+        if (!cards || cards.length === 0) {
+          console.warn("No vehicle cards found with any selector");
+          return results;
+        }
+        cards.forEach((card, index) => {
+          try {
+            let vin = "";
+            const vinElement = card.querySelector("[data-vin]");
+            if (vinElement) {
+              vin = vinElement.getAttribute("data-vin") || "";
+            }
+            if (!vin) {
+              const linkElement2 = card.querySelector('a[href*="vehicledetail"]');
+              const href = linkElement2?.getAttribute("href") || "";
+              const vinMatch = href.match(/vin[=\/]([A-HJ-NPR-Z0-9]{17})/i);
+              if (vinMatch) vin = vinMatch[1];
+            }
+            if (!vin) {
+              console.warn(`Card ${index}: No VIN found, skipping`);
+              return;
+            }
+            const titleSelectors = [".title", '[data-qa="title"]', "h2", ".vehicle-card__title"];
+            let titleText = "";
+            for (const selector of titleSelectors) {
+              const el = card.querySelector(selector);
+              if (el?.textContent?.trim()) {
+                titleText = el.textContent.trim();
+                break;
+              }
+            }
+            const titleParts = titleText.split(" ");
+            const year = parseInt(titleParts[0]) || 0;
+            const make2 = titleParts[1] || "";
+            const model2 = titleParts.slice(2).join(" ") || "";
+            const priceSelectors = [".primary-price", '[data-qa="price"]', ".price-section span"];
+            let priceText = "";
+            for (const selector of priceSelectors) {
+              const el = card.querySelector(selector);
+              if (el?.textContent) {
+                priceText = el.textContent.replace(/[^0-9]/g, "");
+                break;
+              }
+            }
+            const price = parseInt(priceText) || null;
+            const mileageSelectors = [".mileage", '[data-qa="mileage"]', ".miles"];
+            let mileageText = "";
+            for (const selector of mileageSelectors) {
+              const el = card.querySelector(selector);
+              if (el?.textContent) {
+                mileageText = el.textContent.replace(/[^0-9]/g, "");
+                break;
+              }
+            }
+            const miles = parseInt(mileageText) || null;
+            const stockTypeSelectors = [".stock-type", '[data-qa="stock-type"]', ".badge"];
+            let condition = "used";
+            for (const selector of stockTypeSelectors) {
+              const el = card.querySelector(selector);
+              if (el?.textContent) {
+                condition = el.textContent.toLowerCase().trim();
+                break;
+              }
+            }
+            const imageElement = card.querySelector("img");
+            const imageUrl = imageElement?.getAttribute("data-src") || imageElement?.getAttribute("src") || imageElement?.getAttribute("data-lazy") || "";
+            const dealerSelectors = [".dealer-name", '[data-qa="dealer-name"]', ".seller-name"];
+            let dealerName = "";
+            for (const selector of dealerSelectors) {
+              const el = card.querySelector(selector);
+              if (el?.textContent?.trim()) {
+                dealerName = el.textContent.trim();
+                break;
+              }
+            }
+            const locationSelectors = [".miles-from", '[data-qa="miles-from"]', ".dealer-location"];
+            let locationText = "";
+            for (const selector of locationSelectors) {
+              const el = card.querySelector(selector);
+              if (el?.textContent?.trim()) {
+                locationText = el.textContent.trim();
+                break;
+              }
+            }
+            const locationParts = locationText.split(",");
+            const dealerCity = locationParts[0]?.trim() || "";
+            const dealerState = locationParts[1]?.trim() || "";
+            const linkElement = card.querySelector("a");
+            const sourceUrl = linkElement?.getAttribute("href") || "";
+            const fullUrl = sourceUrl.startsWith("http") ? sourceUrl : `https://www.cars.com${sourceUrl}`;
+            results.push({
+              vin,
+              year,
+              make: make2,
+              model: model2,
+              price,
+              miles,
+              condition,
+              imageUrl,
+              dealerName,
+              dealerCity,
+              dealerState,
+              sourceUrl: fullUrl
+            });
+          } catch (error50) {
+            console.error(`Error parsing card ${index}:`, error50);
+          }
+        });
+        return results;
+      });
+      await browser.close();
+      console.log(`\u2713 Scraped ${listings2.length} listings from Cars.com (attempt ${attempt})`);
+      if (listings2.length === 0 && attempt < maxRetries) {
+        throw new Error("No listings found, retrying");
+      }
+      return listings2;
+    } catch (error50) {
+      lastError = error50;
+      console.error(`\u2717 Error scraping Cars.com (attempt ${attempt}/${maxRetries}):`, error50.message);
+      if (attempt >= maxRetries) {
+        console.error(`Failed after ${maxRetries} attempts:`, error50);
+        throw error50;
+      }
+    }
   }
+  throw lastError || new Error("Scraping failed");
 }
 async function scrapeListingDetails(env2, url2) {
   try {
@@ -30260,11 +31075,22 @@ async function saveListingsToDB(env2, listings2) {
             VALUES (?, ?, ?, ?, ?, 'cars.com', ?)
           `).bind(historyId, id, listing.vin, listing.price, listing.miles || null, now).run();
         }
+        enrichListingInBackground(env2, listing.vin).catch((error50) => {
+          console.warn(`VIN enrichment failed for ${listing.vin}:`, error50.message);
+        });
       }
       console.log(`\u2713 Saved: ${listing.year} ${listing.make} ${listing.model} (${listing.vin})`);
     } catch (error50) {
       console.error(`\u2717 Error saving listing ${listing.vin}:`, error50);
     }
+  }
+}
+async function enrichListingInBackground(env2, vin) {
+  const { enrichListingByVIN: enrichListingByVIN2 } = await Promise.resolve().then(() => (init_batch_decode(), batch_decode_exports));
+  await new Promise((resolve) => setTimeout(resolve, 1e3));
+  const result = await enrichListingByVIN2(env2, vin, false);
+  if (result.success && result.enrichedFields > 0) {
+    console.log(`  \u2192 Auto-enriched ${result.enrichedFields} field(s) for ${vin}`);
   }
 }
 var init_scraper_cars_com = __esm({
@@ -30281,16 +31107,156 @@ var init_scraper_cars_com = __esm({
     __name(scrapeCarsComSearch, "scrapeCarsComSearch");
     __name(scrapeListingDetails, "scrapeListingDetails");
     __name(saveListingsToDB, "saveListingsToDB");
+    __name(enrichListingInBackground, "enrichListingInBackground");
   }
 });
 
-// .wrangler/tmp/bundle-q4i4iH/middleware-loader.entry.ts
+// src/services/scraper-utils.ts
+var scraper_utils_exports = {};
+__export(scraper_utils_exports, {
+  ScraperLogger: () => ScraperLogger,
+  checkRobotsConsent: () => checkRobotsConsent,
+  delay: () => delay,
+  getRandomDelay: () => getRandomDelay,
+  getScraperSummary: () => getScraperSummary,
+  shouldRetryError: () => shouldRetryError
+});
+async function getScraperSummary(env2, days = 7) {
+  const summaries = [];
+  for (let i = 0; i < days; i++) {
+    const date5 = /* @__PURE__ */ new Date();
+    date5.setDate(date5.getDate() - i);
+    const dateKey = date5.toISOString().split("T")[0];
+    const summaryKey = `scraper:summary:${dateKey}`;
+    const summary = await env2.CACHE.get(summaryKey, "json");
+    if (summary) {
+      summaries.push(summary);
+    }
+  }
+  return summaries;
+}
+function shouldRetryError(error50) {
+  const retryablePatterns = [
+    "timeout",
+    "network",
+    "ECONNRESET",
+    "ETIMEDOUT",
+    "ENOTFOUND",
+    "No listings found, retrying",
+    "navigation"
+  ];
+  const errorMessage = error50.message.toLowerCase();
+  return retryablePatterns.some((pattern) => errorMessage.includes(pattern.toLowerCase()));
+}
+async function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+function getRandomDelay(min = 2e3, max = 3e3) {
+  return min + Math.random() * (max - min);
+}
+async function checkRobotsConsent(url2) {
+  try {
+    const robotsUrl = new URL("/robots.txt", url2).toString();
+    const response = await fetch(robotsUrl);
+    if (!response.ok) {
+      return true;
+    }
+    const robotsTxt = await response.text();
+    const disallowedPaths = robotsTxt.split("\n").filter((line) => line.trim().toLowerCase().startsWith("disallow:")).map((line) => line.split(":")[1].trim());
+    const pathname = new URL(url2).pathname;
+    const isDisallowed = disallowedPaths.some((path) => {
+      if (path === "/") return true;
+      return pathname.startsWith(path);
+    });
+    return !isDisallowed;
+  } catch (error50) {
+    console.warn("Could not check robots.txt, proceeding with caution");
+    return true;
+  }
+}
+var ScraperLogger;
+var init_scraper_utils = __esm({
+  "src/services/scraper-utils.ts"() {
+    "use strict";
+    init_modules_watch_stub();
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+    init_performance2();
+    ScraperLogger = class {
+      static {
+        __name(this, "ScraperLogger");
+      }
+      env;
+      jobId;
+      constructor(env2, jobId) {
+        this.env = env2;
+        this.jobId = jobId;
+      }
+      log(message, data) {
+        const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+        console.log(`[${timestamp}] [Job ${this.jobId}] ${message}`, data || "");
+      }
+      error(message, error50) {
+        const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+        console.error(`[${timestamp}] [Job ${this.jobId}] ERROR: ${message}`, error50 || "");
+      }
+      warn(message, data) {
+        const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+        console.warn(`[${timestamp}] [Job ${this.jobId}] WARN: ${message}`, data || "");
+      }
+      async recordMetrics(metrics) {
+        const fullMetrics = {
+          ...metrics,
+          jobId: this.jobId,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString()
+        };
+        this.log("Metrics", fullMetrics);
+        try {
+          const key = `scraper:metrics:${this.jobId}`;
+          await this.env.CACHE.put(key, JSON.stringify(fullMetrics), {
+            expirationTtl: 7 * 24 * 60 * 60
+            // 7 days
+          });
+          const dateKey = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+          const summaryKey = `scraper:summary:${dateKey}`;
+          const existingSummary = await this.env.CACHE.get(summaryKey, "json");
+          const summary = existingSummary || {
+            date: dateKey,
+            totalJobs: 0,
+            successJobs: 0,
+            failedJobs: 0,
+            totalListings: 0,
+            totalDuration: 0
+          };
+          summary.totalJobs++;
+          if (metrics.status === "success") summary.successJobs++;
+          if (metrics.status === "failed") summary.failedJobs++;
+          summary.totalListings += metrics.listingsFound;
+          summary.totalDuration += metrics.duration;
+          await this.env.CACHE.put(summaryKey, JSON.stringify(summary), {
+            expirationTtl: 30 * 24 * 60 * 60
+            // 30 days
+          });
+        } catch (error50) {
+          this.error("Failed to record metrics", error50);
+        }
+      }
+    };
+    __name(getScraperSummary, "getScraperSummary");
+    __name(shouldRetryError, "shouldRetryError");
+    __name(delay, "delay");
+    __name(getRandomDelay, "getRandomDelay");
+    __name(checkRobotsConsent, "checkRobotsConsent");
+  }
+});
+
+// .wrangler/tmp/bundle-OFyr05/middleware-loader.entry.ts
 init_modules_watch_stub();
 init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
 init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
 init_performance2();
 
-// .wrangler/tmp/bundle-q4i4iH/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-OFyr05/middleware-insertion-facade.js
 init_modules_watch_stub();
 init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
 init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
@@ -37584,8 +38550,8 @@ init_modules_watch_stub();
 init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
 init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
 init_performance2();
-function getBelarusianPlural(count3, one, few, many) {
-  const absCount = Math.abs(count3);
+function getBelarusianPlural(count4, one, few, many) {
+  const absCount = Math.abs(count4);
   const lastDigit = absCount % 10;
   const lastTwoDigits = absCount % 100;
   if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
@@ -39499,8 +40465,8 @@ init_modules_watch_stub();
 init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
 init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
 init_performance2();
-function getArmenianPlural(count3, one, many) {
-  return Math.abs(count3) === 1 ? one : many;
+function getArmenianPlural(count4, one, many) {
+  return Math.abs(count4) === 1 ? one : many;
 }
 __name(getArmenianPlural, "getArmenianPlural");
 function withDefiniteArticle(word) {
@@ -41620,8 +42586,8 @@ init_modules_watch_stub();
 init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
 init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
 init_performance2();
-function getRussianPlural(count3, one, few, many) {
-  const absCount = Math.abs(count3);
+function getRussianPlural(count4, one, few, many) {
+  const absCount = Math.abs(count4);
   const lastDigit = absCount % 10;
   const lastTwoDigits = absCount % 100;
   if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
@@ -47448,94 +48414,633 @@ config2(en_default());
 init_d1();
 init_drizzle_orm();
 init_schema();
+
+// src/services/search.ts
+init_modules_watch_stub();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+init_performance2();
+init_drizzle_orm();
+init_schema();
+
+// src/utils/geo.ts
+init_modules_watch_stub();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+init_performance2();
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+  return distance;
+}
+__name(calculateDistance, "calculateDistance");
+function toRadians(degrees) {
+  return degrees * (Math.PI / 180);
+}
+__name(toRadians, "toRadians");
+var ZIP_COORDS = {
+  // Major US cities for testing
+  "10001": { lat: 40.7506, lon: -73.9971 },
+  // New York, NY
+  "90001": { lat: 33.9731, lon: -118.2479 },
+  // Los Angeles, CA
+  "60601": { lat: 41.8859, lon: -87.6181 },
+  // Chicago, IL
+  "77001": { lat: 29.7589, lon: -95.3677 },
+  // Houston, TX
+  "85001": { lat: 33.4484, lon: -112.0741 },
+  // Phoenix, AZ
+  "19101": { lat: 39.9526, lon: -75.1652 },
+  // Philadelphia, PA
+  "78201": { lat: 29.4252, lon: -98.4946 },
+  // San Antonio, TX
+  "92101": { lat: 32.7157, lon: -117.1611 },
+  // San Diego, CA
+  "75201": { lat: 32.7767, lon: -96.797 },
+  // Dallas, TX
+  "95101": { lat: 37.3382, lon: -121.8863 },
+  // San Jose, CA
+  "98101": { lat: 47.6062, lon: -122.3321 },
+  // Seattle, WA
+  "80201": { lat: 39.7392, lon: -104.9903 },
+  // Denver, CO
+  "20001": { lat: 38.9072, lon: -77.0369 },
+  // Washington, DC
+  "02101": { lat: 42.3601, lon: -71.0589 },
+  // Boston, MA
+  "33101": { lat: 25.7617, lon: -80.1918 },
+  // Miami, FL
+  "30301": { lat: 33.749, lon: -84.388 },
+  // Atlanta, GA
+  "48201": { lat: 42.3314, lon: -83.0458 },
+  // Detroit, MI
+  "55401": { lat: 44.9778, lon: -93.265 },
+  // Minneapolis, MN
+  "63101": { lat: 38.627, lon: -90.1994 },
+  // St. Louis, MO
+  "97201": { lat: 45.5152, lon: -122.6784 }
+  // Portland, OR
+};
+async function getCoordinatesFromZip(zipCode) {
+  const normalizedZip = zipCode.split("-")[0].padStart(5, "0");
+  const coords = ZIP_COORDS[normalizedZip];
+  if (coords) {
+    return coords;
+  }
+  return null;
+}
+__name(getCoordinatesFromZip, "getCoordinatesFromZip");
+function filterByRadius(listings2, centerLat, centerLon, radiusMiles) {
+  return listings2.filter((listing) => {
+    if (!listing.dealer?.latitude || !listing.dealer?.longitude) {
+      return false;
+    }
+    const distance = calculateDistance(
+      centerLat,
+      centerLon,
+      listing.dealer.latitude,
+      listing.dealer.longitude
+    );
+    return distance <= radiusMiles;
+  });
+}
+__name(filterByRadius, "filterByRadius");
+function sortByDistance(listings2, centerLat, centerLon) {
+  return listings2.map((listing) => {
+    if (!listing.dealer?.latitude || !listing.dealer?.longitude) {
+      return { ...listing, distance: Infinity };
+    }
+    const distance = calculateDistance(
+      centerLat,
+      centerLon,
+      listing.dealer.latitude,
+      listing.dealer.longitude
+    );
+    return { ...listing, distance };
+  }).sort((a, b) => {
+    const distA = a.distance ?? Infinity;
+    const distB = b.distance ?? Infinity;
+    return distA - distB;
+  });
+}
+__name(sortByDistance, "sortByDistance");
+
+// src/services/search.ts
+var SearchService = class {
+  constructor(db) {
+    this.db = db;
+  }
+  static {
+    __name(this, "SearchService");
+  }
+  async search(filters, userZipLocation) {
+    const page = filters.page || 1;
+    const perPage = filters.per_page || 25;
+    const offset = (page - 1) * perPage;
+    const conditions = this.buildWhereConditions(filters);
+    const orderBy = this.buildOrderBy(filters, userZipLocation);
+    const results = await this.db.select({
+      listing: listings,
+      dealer: dealers
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions)).orderBy(orderBy).limit(perPage).offset(offset);
+    const flatResults = results.map((r) => {
+      const listing = { ...r.listing, dealer: r.dealer };
+      if (userZipLocation && r.dealer?.latitude && r.dealer?.longitude) {
+        const distance = calculateDistance(
+          userZipLocation.lat,
+          userZipLocation.lon,
+          r.dealer.latitude,
+          r.dealer.longitude
+        );
+        return { ...listing, distance: Math.round(distance) };
+      }
+      return listing;
+    });
+    const [{ count: count4 }] = await this.db.select({ count: sql`count(*)` }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions));
+    const [facets, stats, buckets] = await Promise.all([
+      this.getFacets(conditions),
+      this.getStats(conditions),
+      this.getBuckets(conditions)
+    ]);
+    return {
+      data: flatResults,
+      meta: {
+        page,
+        per_page: perPage,
+        total: count4,
+        total_pages: Math.ceil(count4 / perPage)
+      },
+      facets,
+      stats,
+      buckets
+    };
+  }
+  buildWhereConditions(filters) {
+    const conditions = [eq(listings.isActive, 1)];
+    if (filters.make && filters.make.length > 0) {
+      conditions.push(inArray(listings.make, filters.make));
+    }
+    if (filters.model && filters.model.length > 0) {
+      conditions.push(inArray(listings.model, filters.model));
+    }
+    if (filters.trim && filters.trim.length > 0) {
+      conditions.push(inArray(listings.trim, filters.trim));
+    }
+    if (filters.year_min) {
+      conditions.push(gte(listings.year, filters.year_min));
+    }
+    if (filters.year_max) {
+      conditions.push(lte(listings.year, filters.year_max));
+    }
+    if (filters.price_min) {
+      conditions.push(gte(listings.price, filters.price_min));
+    }
+    if (filters.price_max) {
+      conditions.push(lte(listings.price, filters.price_max));
+    }
+    if (filters.miles_min) {
+      conditions.push(gte(listings.miles, filters.miles_min));
+    }
+    if (filters.miles_max) {
+      conditions.push(lte(listings.miles, filters.miles_max));
+    }
+    if (filters.condition && filters.condition.length > 0) {
+      conditions.push(inArray(listings.condition, filters.condition));
+    }
+    if (filters.is_certified !== void 0) {
+      conditions.push(eq(listings.isCertified, filters.is_certified ? 1 : 0));
+    }
+    if (filters.exterior_color && filters.exterior_color.length > 0) {
+      conditions.push(inArray(listings.exteriorColor, filters.exterior_color));
+    }
+    if (filters.interior_color && filters.interior_color.length > 0) {
+      conditions.push(inArray(listings.interiorColor, filters.interior_color));
+    }
+    if (filters.drivetrain && filters.drivetrain.length > 0) {
+      conditions.push(inArray(listings.drivetrain, filters.drivetrain));
+    }
+    if (filters.transmission && filters.transmission.length > 0) {
+      conditions.push(inArray(listings.transmission, filters.transmission));
+    }
+    if (filters.fuel_type && filters.fuel_type.length > 0) {
+      conditions.push(inArray(listings.fuelType, filters.fuel_type));
+    }
+    if (filters.dealer_type && filters.dealer_type.length > 0) {
+      conditions.push(inArray(dealers.dealerType, filters.dealer_type));
+    }
+    return conditions;
+  }
+  buildOrderBy(filters, userZipLocation) {
+    const sortOrder = filters.sort_order === "desc" ? desc : asc;
+    switch (filters.sort_by) {
+      case "miles":
+        return sortOrder(listings.miles);
+      case "year":
+        return sortOrder(listings.year);
+      case "days_on_lot":
+        return sortOrder(sql`julianday('now') - julianday(${listings.firstSeenAt})`);
+      case "distance":
+        return sortOrder(listings.price);
+      case "price":
+      default:
+        return sortOrder(listings.price);
+    }
+  }
+  async getFacets(conditions) {
+    const facets = {};
+    const makes = await this.db.select({
+      value: listings.make,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions)).groupBy(listings.make).orderBy(desc(sql`count(*)`)).limit(50);
+    facets.make = makes;
+    const models = await this.db.select({
+      value: listings.model,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions)).groupBy(listings.model).orderBy(desc(sql`count(*)`)).limit(50);
+    facets.model = models;
+    const trims = await this.db.select({
+      value: listings.trim,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions, sql`${listings.trim} IS NOT NULL`)).groupBy(listings.trim).orderBy(desc(sql`count(*)`)).limit(50);
+    facets.trim = trims;
+    const years = await this.db.select({
+      value: listings.year,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions)).groupBy(listings.year).orderBy(desc(listings.year)).limit(20);
+    facets.year = years;
+    const conditionFacets = await this.db.select({
+      value: listings.condition,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions, sql`${listings.condition} IS NOT NULL`)).groupBy(listings.condition);
+    facets.condition = conditionFacets;
+    const exteriorColors = await this.db.select({
+      value: listings.exteriorColor,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions, sql`${listings.exteriorColor} IS NOT NULL`)).groupBy(listings.exteriorColor).orderBy(desc(sql`count(*)`)).limit(20);
+    facets.exterior_color = exteriorColors;
+    const interiorColors = await this.db.select({
+      value: listings.interiorColor,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions, sql`${listings.interiorColor} IS NOT NULL`)).groupBy(listings.interiorColor).orderBy(desc(sql`count(*)`)).limit(20);
+    facets.interior_color = interiorColors;
+    const drivetrains = await this.db.select({
+      value: listings.drivetrain,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions, sql`${listings.drivetrain} IS NOT NULL`)).groupBy(listings.drivetrain);
+    facets.drivetrain = drivetrains;
+    const transmissions = await this.db.select({
+      value: listings.transmission,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions, sql`${listings.transmission} IS NOT NULL`)).groupBy(listings.transmission);
+    facets.transmission = transmissions;
+    const fuelTypes = await this.db.select({
+      value: listings.fuelType,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions, sql`${listings.fuelType} IS NOT NULL`)).groupBy(listings.fuelType);
+    facets.fuel_type = fuelTypes;
+    const dealerTypes = await this.db.select({
+      value: dealers.dealerType,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions, sql`${dealers.dealerType} IS NOT NULL`)).groupBy(dealers.dealerType);
+    facets.dealer_type = dealerTypes;
+    return facets;
+  }
+  async getStats(conditions) {
+    const [priceStats] = await this.db.select({
+      min: sql`MIN(${listings.price})`,
+      max: sql`MAX(${listings.price})`,
+      avg: sql`ROUND(AVG(${listings.price}))`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions, sql`${listings.price} IS NOT NULL`));
+    const [milesStats] = await this.db.select({
+      min: sql`MIN(${listings.miles})`,
+      max: sql`MAX(${listings.miles})`,
+      avg: sql`ROUND(AVG(${listings.miles}))`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions, sql`${listings.miles} IS NOT NULL`));
+    const [yearStats] = await this.db.select({
+      min: sql`MIN(${listings.year})`,
+      max: sql`MAX(${listings.year})`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions));
+    const [medianPrice] = await this.db.select({
+      median: sql`(
+          SELECT ${listings.price}
+          FROM ${listings}
+          LEFT JOIN ${dealers} ON ${listings.dealerId} = ${dealers.id}
+          WHERE ${and(...conditions, sql`${listings.price} IS NOT NULL`)}
+          ORDER BY ${listings.price}
+          LIMIT 1
+          OFFSET (
+            SELECT COUNT(*) / 2
+            FROM ${listings}
+            LEFT JOIN ${dealers} ON ${listings.dealerId} = ${dealers.id}
+            WHERE ${and(...conditions, sql`${listings.price} IS NOT NULL`)}
+          )
+        )`
+    }).from(sql`(SELECT 1)`);
+    return {
+      price: {
+        ...priceStats,
+        median: medianPrice?.median || priceStats.avg
+      },
+      miles: milesStats,
+      year: yearStats
+    };
+  }
+  async getBuckets(conditions) {
+    const priceBuckets = await this.db.select({
+      bucket: sql`
+          CASE
+            WHEN ${listings.price} < 20000 THEN 'Under $20k'
+            WHEN ${listings.price} >= 20000 AND ${listings.price} < 30000 THEN '$20k-$30k'
+            WHEN ${listings.price} >= 30000 AND ${listings.price} < 40000 THEN '$30k-$40k'
+            WHEN ${listings.price} >= 40000 AND ${listings.price} < 50000 THEN '$40k-$50k'
+            ELSE '$50k+'
+          END
+        `,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions, sql`${listings.price} IS NOT NULL`)).groupBy(sql`bucket`).orderBy(
+      sql`CASE bucket
+          WHEN 'Under $20k' THEN 1
+          WHEN '$20k-$30k' THEN 2
+          WHEN '$30k-$40k' THEN 3
+          WHEN '$40k-$50k' THEN 4
+          ELSE 5
+        END`
+    );
+    const milesBuckets = await this.db.select({
+      bucket: sql`
+          CASE
+            WHEN ${listings.miles} < 10000 THEN 'Under 10k'
+            WHEN ${listings.miles} >= 10000 AND ${listings.miles} < 25000 THEN '10k-25k'
+            WHEN ${listings.miles} >= 25000 AND ${listings.miles} < 50000 THEN '25k-50k'
+            WHEN ${listings.miles} >= 50000 AND ${listings.miles} < 75000 THEN '50k-75k'
+            ELSE '75k+'
+          END
+        `,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions, sql`${listings.miles} IS NOT NULL`)).groupBy(sql`bucket`).orderBy(
+      sql`CASE bucket
+          WHEN 'Under 10k' THEN 1
+          WHEN '10k-25k' THEN 2
+          WHEN '25k-50k' THEN 3
+          WHEN '50k-75k' THEN 4
+          ELSE 5
+        END`
+    );
+    const yearBuckets = await this.db.select({
+      bucket: sql`
+          CASE
+            WHEN ${listings.year} = 2024 THEN '2024'
+            WHEN ${listings.year} = 2023 THEN '2023'
+            WHEN ${listings.year} = 2022 THEN '2022'
+            WHEN ${listings.year} = 2021 THEN '2021'
+            ELSE '2020 and older'
+          END
+        `,
+      count: sql`count(*)`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions)).groupBy(sql`bucket`).orderBy(
+      sql`CASE bucket
+          WHEN '2024' THEN 1
+          WHEN '2023' THEN 2
+          WHEN '2022' THEN 3
+          WHEN '2021' THEN 4
+          ELSE 5
+        END`
+    );
+    return {
+      price: priceBuckets.map((b) => ({ label: b.bucket, count: b.count })),
+      miles: milesBuckets.map((b) => ({ label: b.bucket, count: b.count })),
+      year: yearBuckets.map((b) => ({ label: b.bucket, count: b.count }))
+    };
+  }
+};
+
+// src/services/facets.ts
+init_modules_watch_stub();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+init_performance2();
+import { createHash } from "crypto";
+var FacetsCache = class _FacetsCache {
+  constructor(kv) {
+    this.kv = kv;
+  }
+  static {
+    __name(this, "FacetsCache");
+  }
+  static TTL = 300;
+  // 5 minutes
+  static KEY_PREFIX = "facets:";
+  /**
+   * Generate a cache key based on filter parameters
+   */
+  static generateCacheKey(filters) {
+    const sortedKeys = Object.keys(filters).sort();
+    const canonicalString = sortedKeys.map((key) => `${key}=${JSON.stringify(filters[key])}`).join("&");
+    const hash2 = createHash("sha256").update(canonicalString).digest("hex").substring(0, 16);
+    return `${this.KEY_PREFIX}${hash2}`;
+  }
+  /**
+   * Get cached facets if available and not expired
+   */
+  async get(cacheKey) {
+    try {
+      const cached2 = await this.kv.get(cacheKey, "json");
+      if (!cached2) {
+        return null;
+      }
+      const data = cached2;
+      const age = Date.now() - data.cachedAt;
+      if (age > _FacetsCache.TTL * 1e3) {
+        return null;
+      }
+      return data;
+    } catch (error50) {
+      console.error("Error reading from facets cache:", error50);
+      return null;
+    }
+  }
+  /**
+   * Store facets in cache
+   */
+  async set(cacheKey, data) {
+    try {
+      const cachedData = {
+        ...data,
+        cachedAt: Date.now()
+      };
+      await this.kv.put(cacheKey, JSON.stringify(cachedData), {
+        expirationTtl: _FacetsCache.TTL
+      });
+    } catch (error50) {
+      console.error("Error writing to facets cache:", error50);
+    }
+  }
+  /**
+   * Invalidate cache for a specific pattern or all facets
+   */
+  async invalidate(pattern) {
+    try {
+      if (!pattern) {
+        const list = await this.kv.list({ prefix: _FacetsCache.KEY_PREFIX });
+        const deletePromises = list.keys.map((key) => this.kv.delete(key.name));
+        await Promise.all(deletePromises);
+        return;
+      }
+      await this.kv.delete(pattern);
+    } catch (error50) {
+      console.error("Error invalidating facets cache:", error50);
+    }
+  }
+  /**
+   * Invalidate all cached facets
+   * Call this when new listings are added or updated
+   */
+  async invalidateAll() {
+    return this.invalidate();
+  }
+};
+
+// src/routes/listings.ts
 var listingsRouter = new Hono2();
+var parseArray = /* @__PURE__ */ __name((value) => {
+  if (!value) return void 0;
+  return value.split(",").map((v) => v.trim()).filter(Boolean);
+}, "parseArray");
 var searchSchema = external_exports.object({
+  // Multi-select filters (comma-separated)
   make: external_exports.string().optional(),
   model: external_exports.string().optional(),
+  trim: external_exports.string().optional(),
+  // Range filters
   year_min: external_exports.coerce.number().optional(),
   year_max: external_exports.coerce.number().optional(),
   price_min: external_exports.coerce.number().optional(),
   price_max: external_exports.coerce.number().optional(),
+  miles_min: external_exports.coerce.number().optional(),
   miles_max: external_exports.coerce.number().optional(),
-  condition: external_exports.enum(["new", "used", "certified"]).optional(),
-  drivetrain: external_exports.string().optional(),
-  fuel_type: external_exports.string().optional(),
+  // Condition filters
+  condition: external_exports.string().optional(),
+  // Comma-separated: new,used,certified
+  is_certified: external_exports.enum(["true", "false"]).optional(),
+  // Spec filters (comma-separated)
   exterior_color: external_exports.string().optional(),
+  interior_color: external_exports.string().optional(),
+  drivetrain: external_exports.string().optional(),
+  // fwd,rwd,awd,4wd
+  transmission: external_exports.string().optional(),
+  // automatic,manual
+  fuel_type: external_exports.string().optional(),
+  // gas,diesel,hybrid,electric
+  // Dealer filters
+  dealer_type: external_exports.string().optional(),
+  // franchise,independent
+  // Geographic filters
   zip_code: external_exports.string().optional(),
   radius: external_exports.coerce.number().default(100),
+  // Pagination and sorting
   page: external_exports.coerce.number().default(1),
-  per_page: external_exports.coerce.number().default(25),
-  sort_by: external_exports.enum(["price", "miles", "year"]).default("price"),
-  sort_order: external_exports.enum(["asc", "desc"]).default("asc")
+  per_page: external_exports.coerce.number().min(1).max(100).default(25),
+  sort_by: external_exports.enum(["price", "miles", "year", "days_on_lot", "distance"]).default("price"),
+  sort_order: external_exports.enum(["asc", "desc"]).default("asc"),
+  // Feature flags
+  include_facets: external_exports.enum(["true", "false"]).default("true"),
+  include_stats: external_exports.enum(["true", "false"]).default("true"),
+  include_buckets: external_exports.enum(["true", "false"]).default("true")
 });
 listingsRouter.get("/", zValidator("query", searchSchema), async (c) => {
   const params = c.req.valid("query");
   const db = drizzle(c.env.DB, { schema: schema_exports });
-  const conditions = [eq(listings.isActive, 1)];
-  if (params.make) {
-    conditions.push(like(listings.make, `%${params.make}%`));
-  }
-  if (params.model) {
-    conditions.push(like(listings.model, `%${params.model}%`));
-  }
-  if (params.year_min) {
-    conditions.push(gte(listings.year, params.year_min));
-  }
-  if (params.year_max) {
-    conditions.push(lte(listings.year, params.year_max));
-  }
-  if (params.price_min) {
-    conditions.push(gte(listings.price, params.price_min));
-  }
-  if (params.price_max) {
-    conditions.push(lte(listings.price, params.price_max));
-  }
-  if (params.miles_max) {
-    conditions.push(lte(listings.miles, params.miles_max));
-  }
-  if (params.condition) {
-    conditions.push(eq(listings.condition, params.condition));
-  }
-  if (params.drivetrain) {
-    conditions.push(eq(listings.drivetrain, params.drivetrain));
-  }
-  if (params.fuel_type) {
-    conditions.push(eq(listings.fuelType, params.fuel_type));
-  }
-  if (params.exterior_color) {
-    conditions.push(like(listings.exteriorColor, `%${params.exterior_color}%`));
-  }
-  const offset = (params.page - 1) * params.per_page;
-  let sortColumn;
-  switch (params.sort_by) {
-    case "miles":
-      sortColumn = listings.miles;
-      break;
-    case "year":
-      sortColumn = listings.year;
-      break;
-    default:
-      sortColumn = listings.price;
-  }
-  const results = await db.select({
-    listing: listings,
-    dealer: dealers
-  }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(...conditions)).orderBy(params.sort_order === "desc" ? desc(sortColumn) : sortColumn).limit(params.per_page).offset(offset);
-  const flatResults = results.map((r) => ({
-    ...r.listing,
-    dealer: r.dealer
-  }));
-  const [{ count: count3 }] = await db.select({ count: sql`count(*)` }).from(listings).where(and(...conditions));
-  return c.json({
-    success: true,
-    data: flatResults,
-    meta: {
-      page: params.page,
-      per_page: params.per_page,
-      total: count3,
-      total_pages: Math.ceil(count3 / params.per_page)
+  const searchService = new SearchService(db);
+  const facetsCache = new FacetsCache(c.env.CACHE);
+  const filters = {
+    make: parseArray(params.make),
+    model: parseArray(params.model),
+    trim: parseArray(params.trim),
+    year_min: params.year_min,
+    year_max: params.year_max,
+    price_min: params.price_min,
+    price_max: params.price_max,
+    miles_min: params.miles_min,
+    miles_max: params.miles_max,
+    condition: parseArray(params.condition),
+    is_certified: params.is_certified === "true" ? true : params.is_certified === "false" ? false : void 0,
+    exterior_color: parseArray(params.exterior_color),
+    interior_color: parseArray(params.interior_color),
+    drivetrain: parseArray(params.drivetrain),
+    transmission: parseArray(params.transmission),
+    fuel_type: parseArray(params.fuel_type),
+    dealer_type: parseArray(params.dealer_type),
+    zip_code: params.zip_code,
+    radius: params.radius,
+    page: params.page,
+    per_page: params.per_page,
+    sort_by: params.sort_by,
+    sort_order: params.sort_order
+  };
+  let userLocation;
+  if (filters.zip_code) {
+    const coords = await getCoordinatesFromZip(filters.zip_code);
+    if (coords) {
+      userLocation = coords;
     }
-  });
+  }
+  const cacheKey = FacetsCache.generateCacheKey(filters);
+  const startTime = Date.now();
+  try {
+    let results = await searchService.search(filters, userLocation);
+    if (userLocation && filters.radius) {
+      results.data = filterByRadius(results.data, userLocation.lat, userLocation.lon, filters.radius);
+      results.meta.total = results.data.length;
+      results.meta.total_pages = Math.ceil(results.data.length / filters.per_page);
+      if (filters.sort_by === "distance") {
+        results.data = sortByDistance(results.data, userLocation.lat, userLocation.lon);
+      }
+    }
+    const response = {
+      success: true,
+      data: results.data,
+      meta: results.meta
+    };
+    if (params.include_facets === "true") {
+      response.facets = results.facets;
+    }
+    if (params.include_stats === "true") {
+      response.stats = results.stats;
+    }
+    if (params.include_buckets === "true") {
+      response.buckets = results.buckets;
+    }
+    if (params.include_facets === "true" && results.facets) {
+      await facetsCache.set(cacheKey, {
+        facets: results.facets,
+        stats: results.stats,
+        buckets: results.buckets
+      });
+    }
+    const queryTime = Date.now() - startTime;
+    response.performance = {
+      query_time_ms: queryTime,
+      cached_facets: false
+    };
+    return c.json(response);
+  } catch (error50) {
+    console.error("Search error:", error50);
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: "SEARCH_ERROR",
+          message: "Failed to execute search",
+          details: error50 instanceof Error ? error50.message : "Unknown error"
+        }
+      },
+      500
+    );
+  }
 });
 listingsRouter.get("/:vin", async (c) => {
   const vin = c.req.param("vin");
@@ -47574,22 +49079,1704 @@ listingsRouter.get("/:vin/history", async (c) => {
   });
 });
 listingsRouter.get("/filters/options", async (c) => {
+  const cacheKey = "filter-options:all";
+  const cached2 = await c.env.CACHE.get(cacheKey, "json");
+  if (cached2) {
+    return c.json({
+      success: true,
+      data: cached2,
+      source: "cache"
+    });
+  }
   const db = drizzle(c.env.DB, { schema: schema_exports });
-  const makes = await db.select({ value: listings.make }).from(listings).where(eq(listings.isActive, 1)).groupBy(listings.make);
-  const [yearRange] = await db.select({
-    min: sql`MIN(year)`,
-    max: sql`MAX(year)`
-  }).from(listings).where(eq(listings.isActive, 1));
-  const [priceRange] = await db.select({
-    min: sql`MIN(price)`,
-    max: sql`MAX(price)`
-  }).from(listings).where(eq(listings.isActive, 1));
+  const [
+    makes,
+    conditions,
+    drivetrains,
+    transmissions,
+    fuelTypes,
+    dealerTypes,
+    yearRange,
+    priceRange,
+    milesRange
+  ] = await Promise.all([
+    // Makes
+    db.select({
+      value: listings.make,
+      count: sql`count(*)`
+    }).from(listings).where(eq(listings.isActive, 1)).groupBy(listings.make).orderBy(desc(sql`count(*)`)),
+    // Conditions
+    db.select({
+      value: listings.condition,
+      count: sql`count(*)`
+    }).from(listings).where(and(eq(listings.isActive, 1), sql`${listings.condition} IS NOT NULL`)).groupBy(listings.condition),
+    // Drivetrains
+    db.select({
+      value: listings.drivetrain,
+      count: sql`count(*)`
+    }).from(listings).where(and(eq(listings.isActive, 1), sql`${listings.drivetrain} IS NOT NULL`)).groupBy(listings.drivetrain),
+    // Transmissions
+    db.select({
+      value: listings.transmission,
+      count: sql`count(*)`
+    }).from(listings).where(and(eq(listings.isActive, 1), sql`${listings.transmission} IS NOT NULL`)).groupBy(listings.transmission),
+    // Fuel Types
+    db.select({
+      value: listings.fuelType,
+      count: sql`count(*)`
+    }).from(listings).where(and(eq(listings.isActive, 1), sql`${listings.fuelType} IS NOT NULL`)).groupBy(listings.fuelType),
+    // Dealer Types
+    db.select({
+      value: dealers.dealerType,
+      count: sql`count(DISTINCT ${listings.id})`
+    }).from(listings).leftJoin(dealers, eq(listings.dealerId, dealers.id)).where(and(eq(listings.isActive, 1), sql`${dealers.dealerType} IS NOT NULL`)).groupBy(dealers.dealerType),
+    // Year range
+    db.select({
+      min: sql`MIN(year)`,
+      max: sql`MAX(year)`
+    }).from(listings).where(eq(listings.isActive, 1)),
+    // Price range
+    db.select({
+      min: sql`MIN(price)`,
+      max: sql`MAX(price)`
+    }).from(listings).where(and(eq(listings.isActive, 1), sql`${listings.price} IS NOT NULL`)),
+    // Miles range
+    db.select({
+      min: sql`MIN(miles)`,
+      max: sql`MAX(miles)`
+    }).from(listings).where(and(eq(listings.isActive, 1), sql`${listings.miles} IS NOT NULL`))
+  ]);
+  const filterOptions = {
+    makes: makes.map((m) => ({ value: m.value, count: m.count })),
+    conditions: conditions.map((c2) => ({ value: c2.value, count: c2.count })),
+    drivetrains: drivetrains.map((d) => ({ value: d.value, count: d.count })),
+    transmissions: transmissions.map((t) => ({ value: t.value, count: t.count })),
+    fuel_types: fuelTypes.map((f) => ({ value: f.value, count: f.count })),
+    dealer_types: dealerTypes.map((d) => ({ value: d.value, count: d.count })),
+    ranges: {
+      year: yearRange[0],
+      price: priceRange[0],
+      miles: milesRange[0]
+    }
+  };
+  await c.env.CACHE.put(cacheKey, JSON.stringify(filterOptions), { expirationTtl: 600 });
+  return c.json({
+    success: true,
+    data: filterOptions,
+    source: "database"
+  });
+});
+listingsRouter.post("/cache/invalidate", async (c) => {
+  const authHeader = c.req.header("Authorization");
+  const expectedToken = c.env.CACHE_INVALIDATION_TOKEN || "dev-token-change-in-production";
+  if (authHeader !== `Bearer ${expectedToken}`) {
+    return c.json({ success: false, error: "Unauthorized" }, 401);
+  }
+  try {
+    const facetsCache = new FacetsCache(c.env.CACHE);
+    await facetsCache.invalidateAll();
+    await c.env.CACHE.delete("filter-options:all");
+    return c.json({
+      success: true,
+      message: "Cache invalidated successfully"
+    });
+  } catch (error50) {
+    console.error("Cache invalidation error:", error50);
+    return c.json(
+      {
+        success: false,
+        error: "Failed to invalidate cache"
+      },
+      500
+    );
+  }
+});
+
+// src/routes/scraper.ts
+init_modules_watch_stub();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+init_performance2();
+init_scraper_cars_com();
+var scraperRouter = new Hono2();
+var scrapeSchema = external_exports.object({
+  make: external_exports.string().min(1),
+  model: external_exports.string().min(1),
+  zipCode: external_exports.string().length(5),
+  radius: external_exports.coerce.number().default(100)
+});
+scraperRouter.post("/trigger", zValidator("json", scrapeSchema), async (c) => {
+  const { make, model, zipCode, radius } = c.req.valid("json");
+  try {
+    console.log(`Starting scrape: ${make} ${model} near ${zipCode}`);
+    const listings2 = await scrapeCarsComSearch(c.env, make, model, zipCode, radius);
+    if (listings2.length === 0) {
+      return c.json({
+        success: true,
+        message: "No listings found",
+        data: { count: 0 }
+      });
+    }
+    await saveListingsToDB(c.env, listings2);
+    return c.json({
+      success: true,
+      message: `Scraped and saved ${listings2.length} listings`,
+      data: {
+        count: listings2.length,
+        make,
+        model,
+        zipCode
+      }
+    });
+  } catch (error50) {
+    console.error("Scrape error:", error50);
+    return c.json({
+      success: false,
+      error: {
+        code: "SCRAPE_ERROR",
+        message: error50.message || "Failed to scrape listings"
+      }
+    }, 500);
+  }
+});
+scraperRouter.get("/status", async (c) => {
   return c.json({
     success: true,
     data: {
-      makes: makes.map((m) => m.value),
-      year_range: yearRange,
-      price_range: priceRange
+      status: "operational",
+      browser: "cloudflare-puppeteer",
+      sources: ["cars.com"]
+    }
+  });
+});
+scraperRouter.post("/queue", zValidator("json", scrapeSchema), async (c) => {
+  const { make, model, zipCode, radius } = c.req.valid("json");
+  try {
+    await c.env.SCRAPE_QUEUE.send({
+      make,
+      model,
+      zipCode,
+      radius,
+      queuedAt: (/* @__PURE__ */ new Date()).toISOString()
+    });
+    return c.json({
+      success: true,
+      message: "Scrape job queued successfully",
+      data: { make, model, zipCode, radius }
+    });
+  } catch (error50) {
+    console.error("Queue error:", error50);
+    return c.json({
+      success: false,
+      error: {
+        code: "QUEUE_ERROR",
+        message: error50.message || "Failed to queue scrape job"
+      }
+    }, 500);
+  }
+});
+scraperRouter.get("/stats", async (c) => {
+  try {
+    const db = c.env.DB;
+    const totalResult = await db.prepare("SELECT COUNT(*) as count FROM listings").first();
+    const totalListings = totalResult?.count || 0;
+    const activeResult = await db.prepare("SELECT COUNT(*) as count FROM listings WHERE is_active = 1").first();
+    const activeListings = activeResult?.count || 0;
+    const sourceResult = await db.prepare(`
+      SELECT source, COUNT(*) as count
+      FROM listings
+      WHERE is_active = 1
+      GROUP BY source
+    `).all();
+    const bySource = sourceResult.results || [];
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1e3).toISOString();
+    const recentResult = await db.prepare(`
+      SELECT COUNT(*) as count
+      FROM listings
+      WHERE created_at > ?
+    `).bind(twentyFourHoursAgo).first();
+    const recentListings = recentResult?.count || 0;
+    const historyResult = await db.prepare("SELECT COUNT(*) as count FROM listing_price_history").first();
+    const priceHistoryCount = historyResult?.count || 0;
+    const latestResult = await db.prepare(`
+      SELECT MAX(created_at) as latest
+      FROM listings
+    `).first();
+    const latestScrape = latestResult?.latest || null;
+    const popularMakesResult = await db.prepare(`
+      SELECT make, COUNT(*) as count
+      FROM listings
+      WHERE is_active = 1
+      GROUP BY make
+      ORDER BY count DESC
+      LIMIT 10
+    `).all();
+    const popularMakes = popularMakesResult.results || [];
+    return c.json({
+      success: true,
+      data: {
+        overview: {
+          totalListings,
+          activeListings,
+          recentListings,
+          priceHistoryCount,
+          latestScrape
+        },
+        bySource,
+        popularMakes
+      }
+    });
+  } catch (error50) {
+    console.error("Stats error:", error50);
+    return c.json({
+      success: false,
+      error: {
+        code: "STATS_ERROR",
+        message: error50.message || "Failed to fetch stats"
+      }
+    }, 500);
+  }
+});
+scraperRouter.get("/metrics", async (c) => {
+  try {
+    const days = parseInt(c.req.query("days") || "7");
+    const { getScraperSummary: getScraperSummary2 } = await Promise.resolve().then(() => (init_scraper_utils(), scraper_utils_exports));
+    const summary = await getScraperSummary2(c.env, days);
+    return c.json({
+      success: true,
+      data: {
+        summary,
+        period: `${days} days`
+      }
+    });
+  } catch (error50) {
+    console.error("Metrics error:", error50);
+    return c.json({
+      success: false,
+      error: {
+        code: "METRICS_ERROR",
+        message: error50.message || "Failed to fetch metrics"
+      }
+    }, 500);
+  }
+});
+
+// src/routes/chat.ts
+init_modules_watch_stub();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+init_performance2();
+
+// src/services/chat.ts
+init_modules_watch_stub();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+init_performance2();
+init_d1();
+init_drizzle_orm();
+init_schema();
+var ChatService = class {
+  static {
+    __name(this, "ChatService");
+  }
+  env;
+  db;
+  constructor(env2) {
+    this.env = env2;
+    this.db = drizzle(env2.DB, { schema: schema_exports });
+  }
+  /**
+   * Send a chat message and get AI response with citations
+   */
+  async sendMessage(message, sessionId, conversationHistory = []) {
+    const relevantListings = await this.findRelevantListings(message);
+    const context3 = this.buildContext(relevantListings);
+    const history2 = await this.getConversationHistory(sessionId);
+    const fullHistory = [...history2, ...conversationHistory];
+    const systemPrompt = this.buildSystemPrompt(context3, relevantListings);
+    const messages = [
+      { role: "system", content: systemPrompt },
+      ...fullHistory,
+      { role: "user", content: message }
+    ];
+    const aiResponse = await this.callWorkersAI(messages);
+    const citations = this.extractCitations(aiResponse, relevantListings);
+    await this.saveConversationHistory(sessionId, [
+      { role: "user", content: message },
+      { role: "assistant", content: aiResponse }
+    ]);
+    return {
+      message: aiResponse,
+      citations,
+      context: {
+        relevantListings,
+        recentSearches: await this.getRecentSearches(sessionId),
+        viewedVehicles: await this.getViewedVehicles(sessionId)
+      }
+    };
+  }
+  /**
+   * Find relevant listings based on user query
+   */
+  async findRelevantListings(query) {
+    const lowerQuery = query.toLowerCase();
+    const params = this.parseQuery(lowerQuery);
+    const conditions = [eq(listings.isActive, 1)];
+    if (params.make) {
+      conditions.push(like(listings.make, `%${params.make}%`));
+    }
+    if (params.model) {
+      conditions.push(like(listings.model, `%${params.model}%`));
+    }
+    if (params.yearMin) {
+      conditions.push(gte(listings.year, params.yearMin));
+    }
+    if (params.yearMax) {
+      conditions.push(lte(listings.year, params.yearMax));
+    }
+    if (params.priceMax) {
+      conditions.push(lte(listings.price, params.priceMax));
+    }
+    if (params.milesMax) {
+      conditions.push(lte(listings.miles, params.milesMax));
+    }
+    if (params.fuelType) {
+      conditions.push(eq(listings.fuelType, params.fuelType));
+    }
+    if (params.bodyType) {
+      conditions.push(like(listings.bodyType, `%${params.bodyType}%`));
+    }
+    const listings2 = await this.db.select().from(listings).where(and(...conditions)).limit(10);
+    return listings2;
+  }
+  /**
+   * Parse natural language query into search parameters
+   */
+  parseQuery(query) {
+    const params = {};
+    const priceMatch = query.match(/under\s+\$?(\d{1,3}),?(\d{3})/i);
+    if (priceMatch) {
+      params.priceMax = parseInt(priceMatch[1] + priceMatch[2]);
+    }
+    const yearMatch = query.match(/(\d{4})/);
+    if (yearMatch) {
+      const year = parseInt(yearMatch[1]);
+      if (year >= 2e3 && year <= 2030) {
+        params.yearMin = year;
+        params.yearMax = year;
+      }
+    }
+    const milesMatch = query.match(/under\s+(\d{1,3}),?(\d{3})?\s*(miles|mi|k)/i);
+    if (milesMatch) {
+      const miles = parseInt(milesMatch[1] + (milesMatch[2] || "000"));
+      params.milesMax = miles;
+    }
+    if (query.includes("electric") || query.includes("ev")) {
+      params.fuelType = "Electric";
+    } else if (query.includes("hybrid")) {
+      params.fuelType = "Hybrid";
+    } else if (query.includes("diesel")) {
+      params.fuelType = "Diesel";
+    }
+    if (query.includes("suv")) {
+      params.bodyType = "SUV";
+    } else if (query.includes("sedan")) {
+      params.bodyType = "Sedan";
+    } else if (query.includes("truck")) {
+      params.bodyType = "Truck";
+    } else if (query.includes("coupe")) {
+      params.bodyType = "Coupe";
+    } else if (query.includes("hatchback")) {
+      params.bodyType = "Hatchback";
+    } else if (query.includes("wagon")) {
+      params.bodyType = "Wagon";
+    } else if (query.includes("van") || query.includes("minivan")) {
+      params.bodyType = "Van";
+    }
+    const makes = [
+      "toyota",
+      "honda",
+      "ford",
+      "chevrolet",
+      "chevy",
+      "nissan",
+      "hyundai",
+      "kia",
+      "mazda",
+      "subaru",
+      "volkswagen",
+      "vw",
+      "bmw",
+      "mercedes",
+      "audi",
+      "lexus",
+      "tesla",
+      "jeep",
+      "ram",
+      "gmc",
+      "dodge",
+      "chrysler",
+      "buick",
+      "cadillac",
+      "volvo",
+      "genesis",
+      "acura",
+      "infiniti",
+      "lincoln",
+      "porsche",
+      "land rover",
+      "jaguar",
+      "mini",
+      "fiat",
+      "alfa romeo",
+      "maserati",
+      "bentley",
+      "rolls royce",
+      "ferrari",
+      "lamborghini",
+      "mclaren",
+      "aston martin"
+    ];
+    for (const make of makes) {
+      if (query.includes(make)) {
+        params.make = make.charAt(0).toUpperCase() + make.slice(1);
+        if (make === "chevy") params.make = "Chevrolet";
+        if (make === "vw") params.make = "Volkswagen";
+        break;
+      }
+    }
+    return params;
+  }
+  /**
+   * Build context string from listings
+   */
+  buildContext(listings2) {
+    if (listings2.length === 0) {
+      return "No relevant vehicles found in the current inventory.";
+    }
+    const contextLines = listings2.map((listing, idx) => {
+      return `[${idx + 1}] ${listing.year} ${listing.make} ${listing.model} ${listing.trim || ""} - $${listing.price?.toLocaleString() || "N/A"} - ${listing.miles?.toLocaleString() || "N/A"} miles - VIN: ${listing.vin}`;
+    });
+    return `Available vehicles:
+${contextLines.join("\n")}`;
+  }
+  /**
+   * Build system prompt with context
+   */
+  buildSystemPrompt(context3, listings2) {
+    return `You are a helpful car shopping assistant for a car search platform. Your role is to help users find the perfect vehicle based on their needs and preferences.
+
+Current inventory context:
+${context3}
+
+Guidelines:
+- Be conversational, friendly, and helpful
+- When recommending vehicles, reference them by their citation number [1], [2], etc.
+- Provide specific details like price, mileage, features when available
+- If the user asks about a specific vehicle, use the VIN to identify it
+- If no vehicles match their criteria, suggest expanding their search or adjusting parameters
+- Always be honest about vehicle availability and pricing
+- Focus on helping the user make an informed decision
+
+When recommending vehicles, use this format:
+"I recommend the [1] 2024 Tesla Model 3 at $52,990 with 12,000 miles."
+
+Remember: You have access to ${listings2.length} vehicles in the current search results.`;
+  }
+  /**
+   * Call Cloudflare Workers AI
+   */
+  async callWorkersAI(messages) {
+    try {
+      const response = await this.env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+        messages: messages.map((m) => ({
+          role: m.role,
+          content: m.content
+        })),
+        max_tokens: 1024,
+        temperature: 0.7,
+        top_p: 0.9
+      });
+      if (typeof response === "object" && response !== null) {
+        const aiResponse = response;
+        return aiResponse.response || aiResponse.result?.response || "I apologize, but I encountered an error processing your request.";
+      }
+      return String(response);
+    } catch (error50) {
+      console.error("Workers AI error:", error50);
+      throw new Error("Failed to generate AI response");
+    }
+  }
+  /**
+   * Extract citations from AI response
+   */
+  extractCitations(response, listings2) {
+    const citations = [];
+    const citationPattern = /\[(\d+)\]/g;
+    const matches = response.matchAll(citationPattern);
+    const citedIndices = /* @__PURE__ */ new Set();
+    for (const match2 of matches) {
+      const index = parseInt(match2[1]) - 1;
+      if (index >= 0 && index < listings2.length) {
+        citedIndices.add(index);
+      }
+    }
+    for (const index of citedIndices) {
+      const listing = listings2[index];
+      citations.push({
+        id: `${index + 1}`,
+        text: `${listing.year} ${listing.make} ${listing.model} ${listing.trim || ""}`.trim(),
+        vin: listing.vin,
+        year: listing.year,
+        make: listing.make,
+        model: listing.model,
+        price: listing.price || 0,
+        url: `/listings/${listing.vin}`
+      });
+    }
+    return citations;
+  }
+  /**
+   * Get conversation history from KV
+   */
+  async getConversationHistory(sessionId) {
+    try {
+      const key = `chat:history:${sessionId}`;
+      const history2 = await this.env.CACHE.get(key, "json");
+      return history2 || [];
+    } catch (error50) {
+      console.error("Error fetching conversation history:", error50);
+      return [];
+    }
+  }
+  /**
+   * Save conversation history to KV
+   */
+  async saveConversationHistory(sessionId, messages) {
+    try {
+      const key = `chat:history:${sessionId}`;
+      const existing = await this.getConversationHistory(sessionId);
+      const updated = [...existing, ...messages];
+      const trimmed = updated.slice(-20);
+      await this.env.CACHE.put(key, JSON.stringify(trimmed), {
+        expirationTtl: 86400
+      });
+    } catch (error50) {
+      console.error("Error saving conversation history:", error50);
+    }
+  }
+  /**
+   * Clear conversation history
+   */
+  async clearHistory(sessionId) {
+    const key = `chat:history:${sessionId}`;
+    await this.env.CACHE.delete(key);
+  }
+  /**
+   * Get recent searches from session
+   */
+  async getRecentSearches(sessionId) {
+    try {
+      const key = `session:searches:${sessionId}`;
+      const searches = await this.env.CACHE.get(key, "json");
+      return searches || [];
+    } catch (error50) {
+      return [];
+    }
+  }
+  /**
+   * Get viewed vehicles from session
+   */
+  async getViewedVehicles(sessionId) {
+    try {
+      const key = `session:viewed:${sessionId}`;
+      const viewed = await this.env.CACHE.get(key, "json");
+      return viewed || [];
+    } catch (error50) {
+      return [];
+    }
+  }
+  /**
+   * Track user search
+   */
+  async trackSearch(sessionId, query) {
+    try {
+      const key = `session:searches:${sessionId}`;
+      const existing = await this.getRecentSearches(sessionId);
+      const updated = [...existing, query].slice(-10);
+      await this.env.CACHE.put(key, JSON.stringify(updated), {
+        expirationTtl: 86400
+      });
+    } catch (error50) {
+      console.error("Error tracking search:", error50);
+    }
+  }
+  /**
+   * Track viewed vehicle
+   */
+  async trackViewedVehicle(sessionId, vin) {
+    try {
+      const key = `session:viewed:${sessionId}`;
+      const existing = await this.getViewedVehicles(sessionId);
+      const updated = [vin, ...existing.filter((v) => v !== vin)].slice(0, 10);
+      await this.env.CACHE.put(key, JSON.stringify(updated), {
+        expirationTtl: 86400
+      });
+    } catch (error50) {
+      console.error("Error tracking viewed vehicle:", error50);
+    }
+  }
+};
+
+// src/routes/chat.ts
+var chatRouter = new Hono2();
+var chatMessageSchema = external_exports.object({
+  message: external_exports.string().min(1).max(1e3),
+  sessionId: external_exports.string().optional(),
+  includeHistory: external_exports.boolean().default(true)
+});
+var historyQuerySchema = external_exports.object({
+  sessionId: external_exports.string().min(1)
+});
+chatRouter.post("/", zValidator("json", chatMessageSchema), async (c) => {
+  try {
+    const { message, sessionId, includeHistory } = c.req.valid("json");
+    const actualSessionId = sessionId || crypto.randomUUID();
+    const chatService = new ChatService(c.env);
+    await chatService.trackSearch(actualSessionId, message);
+    const history2 = includeHistory ? await chatService.getConversationHistory(actualSessionId) : [];
+    const response = await chatService.sendMessage(message, actualSessionId, history2);
+    const formattedCitations = response.citations.map((citation) => ({
+      id: citation.id,
+      text: citation.text,
+      vin: citation.vin,
+      vehicle: {
+        year: citation.year,
+        make: citation.make,
+        model: citation.model,
+        price: citation.price
+      },
+      url: citation.url
+    }));
+    return c.json({
+      success: true,
+      data: {
+        message: response.message,
+        citations: formattedCitations,
+        sessionId: actualSessionId,
+        context: {
+          relevantListings: response.context?.relevantListings?.length || 0,
+          recentSearches: response.context?.recentSearches || [],
+          viewedVehicles: response.context?.viewedVehicles || []
+        }
+      }
+    });
+  } catch (error50) {
+    console.error("Chat error:", error50);
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: "CHAT_ERROR",
+          message: error50.message || "Failed to process chat message"
+        }
+      },
+      500
+    );
+  }
+});
+chatRouter.get("/history", zValidator("query", historyQuerySchema), async (c) => {
+  try {
+    const { sessionId } = c.req.valid("query");
+    const chatService = new ChatService(c.env);
+    const history2 = await chatService.getConversationHistory(sessionId);
+    return c.json({
+      success: true,
+      data: {
+        sessionId,
+        messages: history2,
+        count: history2.length
+      }
+    });
+  } catch (error50) {
+    console.error("History fetch error:", error50);
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: "HISTORY_ERROR",
+          message: error50.message || "Failed to fetch conversation history"
+        }
+      },
+      500
+    );
+  }
+});
+chatRouter.delete("/history", zValidator("json", external_exports.object({
+  sessionId: external_exports.string().min(1)
+})), async (c) => {
+  try {
+    const { sessionId } = c.req.valid("json");
+    const chatService = new ChatService(c.env);
+    await chatService.clearHistory(sessionId);
+    return c.json({
+      success: true,
+      data: {
+        sessionId,
+        message: "Conversation history cleared"
+      }
+    });
+  } catch (error50) {
+    console.error("History clear error:", error50);
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: "CLEAR_ERROR",
+          message: error50.message || "Failed to clear conversation history"
+        }
+      },
+      500
+    );
+  }
+});
+chatRouter.post("/context/search", zValidator("json", external_exports.object({
+  sessionId: external_exports.string().min(1),
+  query: external_exports.string().min(1)
+})), async (c) => {
+  try {
+    const { sessionId, query } = c.req.valid("json");
+    const chatService = new ChatService(c.env);
+    await chatService.trackSearch(sessionId, query);
+    return c.json({
+      success: true,
+      data: { message: "Search tracked" }
+    });
+  } catch (error50) {
+    console.error("Track search error:", error50);
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: "TRACK_ERROR",
+          message: error50.message || "Failed to track search"
+        }
+      },
+      500
+    );
+  }
+});
+chatRouter.post("/context/view", zValidator("json", external_exports.object({
+  sessionId: external_exports.string().min(1),
+  vin: external_exports.string().min(1)
+})), async (c) => {
+  try {
+    const { sessionId, vin } = c.req.valid("json");
+    const chatService = new ChatService(c.env);
+    await chatService.trackViewedVehicle(sessionId, vin);
+    return c.json({
+      success: true,
+      data: { message: "Vehicle view tracked" }
+    });
+  } catch (error50) {
+    console.error("Track view error:", error50);
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: "TRACK_ERROR",
+          message: error50.message || "Failed to track vehicle view"
+        }
+      },
+      500
+    );
+  }
+});
+chatRouter.get("/suggestions", zValidator("query", external_exports.object({
+  sessionId: external_exports.string().optional()
+})), async (c) => {
+  const suggestions = [
+    "What's a good electric SUV under $50k?",
+    "Show me reliable sedans with low mileage",
+    "What are the best family vehicles available?",
+    "Find me a truck under 50,000 miles",
+    "What luxury cars do you have under $40k?",
+    "Compare hybrid SUVs in your inventory"
+  ];
+  return c.json({
+    success: true,
+    data: {
+      suggestions
+    }
+  });
+});
+chatRouter.post("/feedback", zValidator("json", external_exports.object({
+  sessionId: external_exports.string().min(1),
+  messageId: external_exports.string().optional(),
+  rating: external_exports.enum(["helpful", "not_helpful"]),
+  comment: external_exports.string().optional()
+})), async (c) => {
+  try {
+    const feedback = c.req.valid("json");
+    const key = `chat:feedback:${feedback.sessionId}:${Date.now()}`;
+    await c.env.CACHE.put(key, JSON.stringify(feedback), {
+      expirationTtl: 2592e3
+      // 30 days
+    });
+    return c.json({
+      success: true,
+      data: { message: "Feedback received" }
+    });
+  } catch (error50) {
+    console.error("Feedback error:", error50);
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: "FEEDBACK_ERROR",
+          message: error50.message || "Failed to submit feedback"
+        }
+      },
+      500
+    );
+  }
+});
+
+// src/routes/listing-insights.ts
+init_modules_watch_stub();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+init_performance2();
+
+// src/services/analytics.ts
+init_modules_watch_stub();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+init_performance2();
+init_d1();
+init_drizzle_orm();
+init_schema();
+
+// src/utils/deal-score.ts
+init_modules_watch_stub();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+init_performance2();
+function calculateDealScore(factors) {
+  const breakdown = {
+    priceScore: calculatePriceScore(factors.priceVsMarket),
+    mileageScore: calculateMileageScore(factors.mileageVsMarket),
+    daysOnLotScore: calculateDaysOnLotScore(factors.daysOnLot),
+    priceDropScore: calculatePriceDropScore(factors.totalPriceDrops, factors.recentPriceDropAmount),
+    msrpScore: factors.msrpDiscount ? calculateMsrpScore(factors.msrpDiscount) : void 0
+  };
+  const weights = {
+    price: 0.4,
+    // Most important
+    mileage: 0.2,
+    daysOnLot: 0.15,
+    priceDrop: 0.15,
+    msrp: 0.1
+    // Only if available
+  };
+  let totalWeight = weights.price + weights.mileage + weights.daysOnLot + weights.priceDrop;
+  let rawScore = breakdown.priceScore * weights.price + breakdown.mileageScore * weights.mileage + breakdown.daysOnLotScore * weights.daysOnLot + breakdown.priceDropScore * weights.priceDrop;
+  if (breakdown.msrpScore !== void 0) {
+    totalWeight += weights.msrp;
+    rawScore += breakdown.msrpScore * weights.msrp;
+  }
+  const score = Math.round(rawScore / totalWeight * 10) / 10;
+  let grade;
+  if (score >= 8.5) grade = "exceptional";
+  else if (score >= 7) grade = "great";
+  else if (score >= 5.5) grade = "good";
+  else if (score >= 4) grade = "fair";
+  else grade = "below_average";
+  const reasoning = [];
+  if (factors.priceVsMarket <= -10) {
+    reasoning.push(`Price is ${Math.abs(factors.priceVsMarket).toFixed(1)}% below market average`);
+  } else if (factors.priceVsMarket >= 10) {
+    reasoning.push(`Price is ${factors.priceVsMarket.toFixed(1)}% above market average`);
+  } else {
+    reasoning.push("Price is near market average");
+  }
+  if (factors.mileageVsMarket <= -15) {
+    reasoning.push(`Lower mileage than average (${Math.abs(factors.mileageVsMarket).toFixed(1)}% below)`);
+  } else if (factors.mileageVsMarket >= 15) {
+    reasoning.push(`Higher mileage than average (${factors.mileageVsMarket.toFixed(1)}% above)`);
+  }
+  if (factors.daysOnLot >= 60) {
+    reasoning.push(`On lot for ${factors.daysOnLot} days - dealer may be motivated`);
+  }
+  if (factors.totalPriceDrops > 0) {
+    reasoning.push(`Price dropped ${factors.totalPriceDrops} time${factors.totalPriceDrops > 1 ? "s" : ""}`);
+  }
+  if (factors.msrpDiscount && factors.msrpDiscount >= 15) {
+    reasoning.push(`${factors.msrpDiscount.toFixed(1)}% discount from MSRP`);
+  }
+  return {
+    score,
+    grade,
+    breakdown,
+    reasoning
+  };
+}
+__name(calculateDealScore, "calculateDealScore");
+function calculatePriceScore(priceVsMarket) {
+  if (priceVsMarket <= -20) return 10;
+  if (priceVsMarket >= 20) return 1;
+  return 5.5 - priceVsMarket * 0.225;
+}
+__name(calculatePriceScore, "calculatePriceScore");
+function calculateMileageScore(mileageVsMarket) {
+  if (mileageVsMarket <= -30) return 10;
+  if (mileageVsMarket >= 30) return 1;
+  return 5.5 - mileageVsMarket * 0.15;
+}
+__name(calculateMileageScore, "calculateMileageScore");
+function calculateDaysOnLotScore(daysOnLot) {
+  if (daysOnLot <= 14) return 4;
+  if (daysOnLot <= 30) return 6;
+  if (daysOnLot <= 60) return 8;
+  return 10;
+}
+__name(calculateDaysOnLotScore, "calculateDaysOnLotScore");
+function calculatePriceDropScore(totalDrops, recentDropAmount) {
+  let score = 5;
+  score += Math.min(totalDrops * 1.5, 3);
+  if (recentDropAmount >= 2e3) score += 2;
+  else if (recentDropAmount >= 1e3) score += 1;
+  else if (recentDropAmount >= 500) score += 0.5;
+  return Math.min(score, 10);
+}
+__name(calculatePriceDropScore, "calculatePriceDropScore");
+function calculateMsrpScore(discountPercent) {
+  if (discountPercent >= 20) return 10;
+  if (discountPercent >= 10) return 8;
+  if (discountPercent >= 5) return 6.5;
+  if (discountPercent >= 0) return 5 + discountPercent * 0.1;
+  return 5 - Math.abs(discountPercent * 0.1);
+}
+__name(calculateMsrpScore, "calculateMsrpScore");
+function getMarketPosition(priceVsMarket) {
+  if (priceVsMarket <= -15) return "well_below_average";
+  if (priceVsMarket <= -5) return "below_average";
+  if (priceVsMarket <= 5) return "average";
+  if (priceVsMarket <= 15) return "above_average";
+  return "well_above_average";
+}
+__name(getMarketPosition, "getMarketPosition");
+function formatPriceDifference(amount) {
+  const absAmount = Math.abs(amount);
+  const formatted = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0
+  }).format(absAmount);
+  if (amount < 0) {
+    return `${formatted} below market average`;
+  } else if (amount > 0) {
+    return `${formatted} above market average`;
+  }
+  return "at market average";
+}
+__name(formatPriceDifference, "formatPriceDifference");
+
+// src/services/analytics.ts
+async function getListingInsights(db, cache, vin) {
+  const cacheKey = `insights:${vin}`;
+  const cached2 = await cache.get(cacheKey, "json");
+  if (cached2) {
+    return cached2;
+  }
+  const orm = drizzle(db, { schema: schema_exports });
+  const listing = await orm.query.listings.findFirst({
+    where: eq(listings.vin, vin)
+  });
+  if (!listing || !listing.isActive) {
+    return null;
+  }
+  const priceHistory = await orm.select().from(listingPriceHistory).where(eq(listingPriceHistory.vin, vin)).orderBy(desc(listingPriceHistory.recordedAt));
+  const priceHistoryStats = calculatePriceHistoryStats(listing, priceHistory);
+  const marketStats = await getMarketStatsForListing(orm, listing);
+  const priceVsMarket = marketStats.averagePrice > 0 ? (listing.price - marketStats.averagePrice) / marketStats.averagePrice * 100 : 0;
+  const mileageVsMarket = marketStats.averageMiles > 0 ? (listing.miles - marketStats.averageMiles) / marketStats.averageMiles * 100 : 0;
+  const daysOnLot = calculateDaysOnLot(listing.firstSeenAt);
+  const dealScoreFactors = {
+    priceVsMarket,
+    mileageVsMarket,
+    daysOnLot,
+    totalPriceDrops: priceHistoryStats.totalDrops,
+    recentPriceDropAmount: Math.abs(priceHistoryStats.mostRecentChange?.amount || 0)
+  };
+  if (listing.combinedMsrp && listing.price) {
+    dealScoreFactors.msrpDiscount = (listing.combinedMsrp - listing.price) / listing.combinedMsrp * 100;
+  }
+  const dealScore = calculateDealScore(dealScoreFactors);
+  const marketPosition = getMarketPosition(priceVsMarket);
+  const priceComparison = formatPriceDifference(listing.price - marketStats.averagePrice);
+  let msrpComparison;
+  if (listing.baseMsrp && listing.combinedMsrp && listing.price) {
+    const discountAmount = listing.combinedMsrp - listing.price;
+    const discountPercent = discountAmount / listing.combinedMsrp * 100;
+    msrpComparison = {
+      baseMsrp: listing.baseMsrp,
+      combinedMsrp: listing.combinedMsrp,
+      currentPrice: listing.price,
+      discountAmount,
+      discountPercent
+    };
+  }
+  const insights = {
+    vin,
+    dealScore,
+    marketPosition,
+    priceComparison,
+    daysOnLot,
+    priceHistory: priceHistoryStats,
+    msrpComparison,
+    marketStats
+  };
+  await cache.put(cacheKey, JSON.stringify(insights), { expirationTtl: 1800 });
+  return insights;
+}
+__name(getListingInsights, "getListingInsights");
+async function getMarketTrends(db, cache, make, model, year) {
+  const cacheKey = `trends:${make}:${model}:${year || "all"}`;
+  const cached2 = await cache.get(cacheKey, "json");
+  if (cached2) {
+    return cached2;
+  }
+  const orm = drizzle(db, { schema: schema_exports });
+  const conditions = [
+    eq(listings.isActive, 1),
+    eq(listings.make, make),
+    eq(listings.model, model)
+  ];
+  if (year) {
+    conditions.push(eq(listings.year, year));
+  }
+  const listings2 = await orm.select().from(listings).where(and(...conditions));
+  if (listings2.length === 0) {
+    return null;
+  }
+  const prices = listings2.map((l) => l.price).filter((p) => p !== null);
+  const mileages = listings2.map((l) => l.miles).filter((m) => m !== null);
+  const daysOnMarketArray = listings2.map((l) => calculateDaysOnLot(l.firstSeenAt));
+  const stats = {
+    averagePrice: average(prices),
+    priceRange: {
+      min: Math.min(...prices),
+      max: Math.max(...prices),
+      median: median(prices)
+    },
+    averageMileage: average(mileages),
+    mileageRange: {
+      min: Math.min(...mileages),
+      max: Math.max(...mileages),
+      median: median(mileages)
+    },
+    daysOnMarket: {
+      average: average(daysOnMarketArray),
+      median: median(daysOnMarketArray)
+    },
+    activeListings: listings2.length
+  };
+  const priceTrendResult = await analyzePriceTrend(orm, make, model, year);
+  const trends = {
+    make,
+    model,
+    year,
+    stats,
+    priceTrend: priceTrendResult.trend,
+    trendDetails: priceTrendResult.details
+  };
+  await cache.put(cacheKey, JSON.stringify(trends), { expirationTtl: 3600 });
+  return trends;
+}
+__name(getMarketTrends, "getMarketTrends");
+async function getDashboardAnalytics(db, cache) {
+  const cacheKey = "analytics:dashboard";
+  const cached2 = await cache.get(cacheKey, "json");
+  if (cached2) {
+    return cached2;
+  }
+  const orm = drizzle(db, { schema: schema_exports });
+  const [overviewResult] = await orm.select({
+    totalActiveListings: count3(),
+    totalListingValue: sql`SUM(price)`,
+    averageDaysOnMarket: sql`AVG(julianday('now') - julianday(first_seen_at))`
+  }).from(listings).where(eq(listings.isActive, 1));
+  const topMakes = await orm.select({
+    make: listings.make,
+    count: sql`count(*)`,
+    averagePrice: sql`AVG(price)`
+  }).from(listings).where(eq(listings.isActive, 1)).groupBy(listings.make).orderBy(desc(sql`count(*)`)).limit(10);
+  const topModels = await orm.select({
+    make: listings.make,
+    model: listings.model,
+    count: sql`count(*)`,
+    averagePrice: sql`AVG(price)`
+  }).from(listings).where(eq(listings.isActive, 1)).groupBy(listings.make, listings.model).orderBy(desc(sql`count(*)`)).limit(10);
+  const priceSegments = [
+    { segment: "Under $20k", min: 0, max: 2e4 },
+    { segment: "$20k - $40k", min: 2e4, max: 4e4 },
+    { segment: "$40k - $60k", min: 4e4, max: 6e4 },
+    { segment: "$60k - $80k", min: 6e4, max: 8e4 },
+    { segment: "$80k+", min: 8e4, max: Number.MAX_SAFE_INTEGER }
+  ];
+  const priceDistribution = await Promise.all(
+    priceSegments.map(async (segment) => {
+      const [result] = await orm.select({ count: sql`count(*)` }).from(listings).where(
+        and(
+          eq(listings.isActive, 1),
+          gte(listings.price, segment.min),
+          lte(listings.price, segment.max)
+        )
+      );
+      return {
+        segment: segment.segment,
+        count: result.count,
+        percentage: result.count / overviewResult.totalActiveListings * 100
+      };
+    })
+  );
+  const conditionBreakdown = await orm.select({
+    condition: listings.condition,
+    count: sql`count(*)`,
+    averagePrice: sql`AVG(price)`
+  }).from(listings).where(eq(listings.isActive, 1)).groupBy(listings.condition);
+  const analytics = {
+    overview: {
+      totalActiveListings: overviewResult.totalActiveListings,
+      averageDaysOnMarket: Math.round(overviewResult.averageDaysOnMarket),
+      totalListingValue: overviewResult.totalListingValue
+    },
+    topMakes: topMakes.map((m) => ({
+      make: m.make,
+      count: m.count,
+      averagePrice: Math.round(m.averagePrice)
+    })),
+    topModels: topModels.map((m) => ({
+      make: m.make,
+      model: m.model,
+      count: m.count,
+      averagePrice: Math.round(m.averagePrice)
+    })),
+    priceDistribution,
+    conditionBreakdown: conditionBreakdown.map((c) => ({
+      condition: c.condition || "unknown",
+      count: c.count,
+      averagePrice: Math.round(c.averagePrice)
+    }))
+  };
+  await cache.put(cacheKey, JSON.stringify(analytics), { expirationTtl: 900 });
+  return analytics;
+}
+__name(getDashboardAnalytics, "getDashboardAnalytics");
+function calculatePriceHistoryStats(listing, history2) {
+  let totalDrops = 0;
+  let totalIncrease = 0;
+  let biggestDrop = 0;
+  let mostRecentChange = null;
+  if (history2.length > 0) {
+    const sortedHistory = [...history2].sort(
+      (a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime()
+    );
+    for (let i = 1; i < sortedHistory.length; i++) {
+      const change = sortedHistory[i].price - sortedHistory[i - 1].price;
+      if (change < 0) {
+        totalDrops++;
+        if (Math.abs(change) > Math.abs(biggestDrop)) {
+          biggestDrop = change;
+        }
+      } else if (change > 0) {
+        totalIncrease++;
+      }
+    }
+    if (sortedHistory.length >= 2) {
+      const latest = sortedHistory[sortedHistory.length - 1];
+      const previous = sortedHistory[sortedHistory.length - 2];
+      mostRecentChange = {
+        amount: latest.price - previous.price,
+        date: latest.recordedAt
+      };
+    }
+  }
+  return {
+    totalDrops,
+    totalIncrease,
+    firstPrice: history2.length > 0 ? history2[history2.length - 1].price : null,
+    currentPrice: listing.price,
+    biggestDrop,
+    mostRecentChange
+  };
+}
+__name(calculatePriceHistoryStats, "calculatePriceHistoryStats");
+async function getMarketStatsForListing(orm, listing) {
+  const similarVehicles = await orm.select({
+    price: listings.price,
+    miles: listings.miles
+  }).from(listings).where(
+    and(
+      eq(listings.isActive, 1),
+      eq(listings.make, listing.make),
+      eq(listings.model, listing.model),
+      gte(listings.year, listing.year - 1),
+      lte(listings.year, listing.year + 1)
+    )
+  );
+  const prices = similarVehicles.map((v) => v.price).filter((p) => p !== null);
+  const mileages = similarVehicles.map((v) => v.miles).filter((m) => m !== null);
+  return {
+    averagePrice: prices.length > 0 ? average(prices) : 0,
+    averageMiles: mileages.length > 0 ? average(mileages) : 0,
+    sampleSize: similarVehicles.length
+  };
+}
+__name(getMarketStatsForListing, "getMarketStatsForListing");
+function calculateDaysOnLot(firstSeenAt) {
+  const firstSeen = new Date(firstSeenAt);
+  const now = /* @__PURE__ */ new Date();
+  const diffTime = Math.abs(now.getTime() - firstSeen.getTime());
+  return Math.ceil(diffTime / (1e3 * 60 * 60 * 24));
+}
+__name(calculateDaysOnLot, "calculateDaysOnLot");
+async function analyzePriceTrend(orm, make, model, year) {
+  const sixtyDaysAgo = /* @__PURE__ */ new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  const conditions = [
+    eq(listings.make, make),
+    eq(listings.model, model)
+  ];
+  if (year) {
+    conditions.push(eq(listings.year, year));
+  }
+  const currentListings = await orm.select({ price: listings.price }).from(listings).where(and(...conditions, eq(listings.isActive, 1)));
+  const currentPrices = currentListings.map((l) => l.price).filter((p) => p !== null);
+  const currentAvg = currentPrices.length > 0 ? average(currentPrices) : 0;
+  const historicalPrices = await orm.select({ price: listingPriceHistory.price }).from(listingPriceHistory).where(
+    sql`recorded_at < datetime('now', '-30 days')`
+  ).limit(100);
+  const histPrices = historicalPrices.map((h) => h.price).filter((p) => p !== null);
+  const historicalAvg = histPrices.length > 0 ? average(histPrices) : 0;
+  if (historicalAvg === 0 || currentAvg === 0) {
+    return { trend: "stable" };
+  }
+  const changeAmount = currentAvg - historicalAvg;
+  const changePercent = changeAmount / historicalAvg * 100;
+  if (changePercent > 5) {
+    return { trend: "increasing", details: { changePercent, changeAmount } };
+  } else if (changePercent < -5) {
+    return { trend: "decreasing", details: { changePercent, changeAmount } };
+  }
+  return { trend: "stable", details: { changePercent, changeAmount } };
+}
+__name(analyzePriceTrend, "analyzePriceTrend");
+function average(numbers) {
+  if (numbers.length === 0) return 0;
+  return Math.round(numbers.reduce((sum, n) => sum + n, 0) / numbers.length);
+}
+__name(average, "average");
+function median(numbers) {
+  if (numbers.length === 0) return 0;
+  const sorted = [...numbers].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+  }
+  return sorted[mid];
+}
+__name(median, "median");
+
+// src/routes/listing-insights.ts
+var listingInsightsRouter = new Hono2();
+listingInsightsRouter.get("/:vin/insights", async (c) => {
+  const vin = c.req.param("vin");
+  try {
+    const insights = await getListingInsights(c.env.DB, c.env.CACHE, vin);
+    if (!insights) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Listing not found or inactive"
+          }
+        },
+        404
+      );
+    }
+    return c.json({
+      success: true,
+      data: insights
+    });
+  } catch (error50) {
+    console.error("Insights error:", error50);
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: error50.message || "Failed to calculate insights"
+        }
+      },
+      500
+    );
+  }
+});
+
+// src/routes/market.ts
+init_modules_watch_stub();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+init_performance2();
+var marketRouter = new Hono2();
+var trendsSchema = external_exports.object({
+  make: external_exports.string().min(1, "Make is required"),
+  model: external_exports.string().min(1, "Model is required"),
+  year: external_exports.coerce.number().optional()
+});
+marketRouter.get("/trends", zValidator("query", trendsSchema), async (c) => {
+  const params = c.req.valid("query");
+  try {
+    const trends = await getMarketTrends(
+      c.env.DB,
+      c.env.CACHE,
+      params.make,
+      params.model,
+      params.year
+    );
+    if (!trends) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "No market data available for the specified vehicle"
+          }
+        },
+        404
+      );
+    }
+    return c.json({
+      success: true,
+      data: trends
+    });
+  } catch (error50) {
+    console.error("Market trends error:", error50);
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: error50.message || "Failed to calculate market trends"
+        }
+      },
+      500
+    );
+  }
+});
+marketRouter.get("/analytics", async (c) => {
+  try {
+    const analytics = await getDashboardAnalytics(c.env.DB, c.env.CACHE);
+    return c.json({
+      success: true,
+      data: analytics
+    });
+  } catch (error50) {
+    console.error("Analytics error:", error50);
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: error50.message || "Failed to calculate analytics"
+        }
+      },
+      500
+    );
+  }
+});
+marketRouter.get("/overview", async (c) => {
+  try {
+    const analytics = await getDashboardAnalytics(c.env.DB, c.env.CACHE);
+    return c.json({
+      success: true,
+      data: {
+        overview: analytics.overview,
+        topMakes: analytics.topMakes.slice(0, 5),
+        priceDistribution: analytics.priceDistribution
+      }
+    });
+  } catch (error50) {
+    console.error("Market overview error:", error50);
+    return c.json(
+      {
+        success: false,
+        error: {
+          code: "INTERNAL_ERROR",
+          message: error50.message || "Failed to load market overview"
+        }
+      },
+      500
+    );
+  }
+});
+
+// src/routes/vin.ts
+init_modules_watch_stub();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+init_performance2();
+init_vin_validator();
+init_vin_decoder();
+init_d1();
+init_drizzle_orm();
+init_schema();
+var vinRouter = new Hono2();
+vinRouter.get("/validate/:vin", (c) => {
+  const vin = c.req.param("vin");
+  const validation = validateVIN(vin);
+  const basics = validation.isValid ? parseVINBasics(vin) : null;
+  return c.json({
+    success: true,
+    data: {
+      isValid: validation.isValid,
+      errors: validation.errors,
+      vin: validation.sanitizedVIN,
+      basics
+    }
+  });
+});
+vinRouter.get("/decode/:vin", async (c) => {
+  const vin = c.req.param("vin");
+  const result = await decodeVIN(c.env, vin);
+  if (!result.success) {
+    return c.json({
+      success: false,
+      error: result.error
+    }, 400);
+  }
+  return c.json({
+    success: true,
+    data: result.data,
+    meta: {
+      source: result.source
+    }
+  });
+});
+vinRouter.get("/listing/:vin/decode", async (c) => {
+  const vin = c.req.param("vin");
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  const listing = await db.query.listings.findFirst({
+    where: eq(listings.vin, vin.toUpperCase())
+  });
+  if (!listing) {
+    return c.json({
+      success: false,
+      error: {
+        code: "NOT_FOUND",
+        message: "Listing not found"
+      }
+    }, 404);
+  }
+  const result = await decodeVIN(c.env, vin);
+  if (!result.success) {
+    return c.json({
+      success: false,
+      error: result.error
+    }, 400);
+  }
+  const comparisons = compareVINData(
+    {
+      make: listing.make,
+      model: listing.model,
+      year: listing.year
+    },
+    result.data
+  );
+  const enrichmentPlan = planEnrichment(
+    {
+      engine: listing.engine,
+      transmission: listing.transmission,
+      drivetrain: listing.drivetrain,
+      fuelType: listing.fuelType,
+      bodyType: listing.bodyType,
+      cylinders: listing.cylinders,
+      doors: listing.doors,
+      seatingCapacity: listing.seatingCapacity,
+      baseMsrp: listing.baseMsrp
+    },
+    result.data
+  );
+  return c.json({
+    success: true,
+    data: {
+      listing: {
+        vin: listing.vin,
+        year: listing.year,
+        make: listing.make,
+        model: listing.model,
+        trim: listing.trim
+      },
+      decodedVIN: result.data,
+      comparisons,
+      enrichmentPlan
+    },
+    meta: {
+      source: result.source
+    }
+  });
+});
+vinRouter.post("/listing/:vin/enrich", async (c) => {
+  const vin = c.req.param("vin");
+  const db = drizzle(c.env.DB, { schema: schema_exports });
+  const listing = await db.query.listings.findFirst({
+    where: eq(listings.vin, vin.toUpperCase())
+  });
+  if (!listing) {
+    return c.json({
+      success: false,
+      error: {
+        code: "NOT_FOUND",
+        message: "Listing not found"
+      }
+    }, 404);
+  }
+  const result = await decodeVIN(c.env, vin);
+  if (!result.success) {
+    return c.json({
+      success: false,
+      error: result.error
+    }, 400);
+  }
+  const vinData = result.data;
+  const updates = {};
+  let enrichedFields = 0;
+  if (!listing.engine && vinData.engine) {
+    updates.engine = vinData.engine;
+    enrichedFields++;
+  }
+  if (!listing.transmission && vinData.transmission) {
+    updates.transmission = vinData.transmission;
+    enrichedFields++;
+  }
+  if (!listing.drivetrain && vinData.drivetrain) {
+    updates.drivetrain = vinData.drivetrain;
+    enrichedFields++;
+  }
+  if (!listing.fuelType && vinData.fuelType) {
+    updates.fuelType = vinData.fuelType;
+    enrichedFields++;
+  }
+  if (!listing.bodyType && vinData.bodyType) {
+    updates.bodyType = vinData.bodyType;
+    enrichedFields++;
+  }
+  if (!listing.cylinders && vinData.engineCylinders) {
+    updates.cylinders = vinData.engineCylinders;
+    enrichedFields++;
+  }
+  if (!listing.doors && vinData.doors) {
+    updates.doors = vinData.doors;
+    enrichedFields++;
+  }
+  if (!listing.seatingCapacity && vinData.seatingCapacity) {
+    updates.seatingCapacity = vinData.seatingCapacity;
+    enrichedFields++;
+  }
+  if (!listing.baseMsrp && vinData.msrp) {
+    updates.baseMsrp = vinData.msrp;
+    enrichedFields++;
+  }
+  if (enrichedFields === 0) {
+    return c.json({
+      success: true,
+      message: "No fields to enrich - listing already complete",
+      data: {
+        enrichedFields: 0,
+        updates: {}
+      }
+    });
+  }
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  updates.updatedAt = now;
+  const setClause = Object.keys(updates).map((key) => {
+    const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+    return `${snakeKey} = ?`;
+  }).join(", ");
+  const values = Object.values(updates);
+  values.push(vin.toUpperCase());
+  await c.env.DB.prepare(`
+    UPDATE listings
+    SET ${setClause}
+    WHERE vin = ?
+  `).bind(...values).run();
+  const cacheKey = `listing:${vin.toUpperCase()}`;
+  await c.env.CACHE.delete(cacheKey);
+  return c.json({
+    success: true,
+    message: `Enriched ${enrichedFields} field(s)`,
+    data: {
+      enrichedFields,
+      updates
+    }
+  });
+});
+vinRouter.post("/batch-decode", async (c) => {
+  const body = await c.req.json();
+  const { vins } = body;
+  if (!vins || !Array.isArray(vins)) {
+    return c.json({
+      success: false,
+      error: {
+        code: "INVALID_INPUT",
+        message: "vins must be an array"
+      }
+    }, 400);
+  }
+  if (vins.length === 0) {
+    return c.json({
+      success: false,
+      error: {
+        code: "INVALID_INPUT",
+        message: "vins array cannot be empty"
+      }
+    }, 400);
+  }
+  if (vins.length > 100) {
+    return c.json({
+      success: false,
+      error: {
+        code: "INVALID_INPUT",
+        message: "Maximum 100 VINs per batch"
+      }
+    }, 400);
+  }
+  const results = [];
+  for (let i = 0; i < vins.length; i++) {
+    const vin = vins[i];
+    const result = await decodeVIN(c.env, vin);
+    results.push({
+      vin: vin.toUpperCase().trim(),
+      success: result.success,
+      data: result.data,
+      error: result.error
+    });
+    if (i < vins.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+  const successCount = results.filter((r) => r.success).length;
+  const failCount = results.filter((r) => !r.success).length;
+  return c.json({
+    success: true,
+    data: results,
+    meta: {
+      total: vins.length,
+      successful: successCount,
+      failed: failCount
     }
   });
 });
@@ -47603,6 +50790,236 @@ app.use("*", cors({
   allowHeaders: ["Content-Type", "Authorization"]
 }));
 app.get("/", (c) => {
+  const userAgent = c.req.header("user-agent") || "";
+  const isBrowser = userAgent.includes("Mozilla") && !userAgent.includes("curl");
+  if (isBrowser) {
+    return c.html(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Car Search Platform API</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 800px;
+      width: 100%;
+      padding: 40px;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+    .status {
+      display: inline-block;
+      background: #10b981;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      margin-bottom: 30px;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+    }
+    .endpoint {
+      background: #f3f4f6;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+    .method {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-weight: bold;
+      margin-right: 10px;
+      font-size: 0.85em;
+    }
+    .get { background: #3b82f6; color: white; }
+    .post { background: #10b981; color: white; }
+    .url { color: #666; }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .feature {
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .feature-icon {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+    .feature-title {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    .feature-desc {
+      font-size: 0.9em;
+      color: #666;
+    }
+    .stats {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .stat {
+      flex: 1;
+      background: #667eea;
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2em;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .stat-label {
+      font-size: 0.9em;
+      opacity: 0.9;
+    }
+    a {
+      color: #667eea;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      color: #999;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>\u{1F697} Car Search Platform API</h1>
+    <span class="status">\u2713 LIVE & OPERATIONAL</span>
+
+    <div class="section">
+      <h2>\u{1F3AF} Core Features</h2>
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">\u{1F916}</div>
+          <div class="feature-title">AI Chat</div>
+          <div class="feature-desc">Natural language car search</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">\u{1F50D}</div>
+          <div class="feature-title">VIN Decoder</div>
+          <div class="feature-desc">Decode & validate VINs</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">\u{1F4CA}</div>
+          <div class="feature-title">Analytics</div>
+          <div class="feature-desc">Market insights & trends</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">\u{1F50E}</div>
+          <div class="feature-title">Advanced Search</div>
+          <div class="feature-desc">Faceted filtering</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>\u{1F4E1} API Endpoints</h2>
+
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="url">/api/v1/chat</span>
+        <div style="margin-top: 8px; font-size: 0.85em; color: #666;">AI-powered car search assistant</div>
+      </div>
+
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="url">/api/v1/listings</span>
+        <div style="margin-top: 8px; font-size: 0.85em; color: #666;">Search vehicle listings with filters</div>
+      </div>
+
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="url">/api/v1/vin/decode/:vin</span>
+        <div style="margin-top: 8px; font-size: 0.85em; color: #666;">Decode VIN using NHTSA database</div>
+      </div>
+
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="url">/api/v1/market/trends</span>
+        <div style="margin-top: 8px; font-size: 0.85em; color: #666;">Market statistics & price trends</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>\u{1F4C8} Platform Stats</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value">27+</div>
+          <div class="stat-label">API Endpoints</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">8</div>
+          <div class="stat-label">Seed Listings</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">5</div>
+          <div class="stat-label">Core Services</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>\u{1F6E0}\uFE0F Try It Out</h2>
+      <p style="color: #666; margin-bottom: 15px;">
+        Test the AI chat endpoint:
+      </p>
+      <div style="background: #1f2937; color: #10b981; padding: 15px; border-radius: 10px; font-family: 'Monaco', monospace; font-size: 0.85em; overflow-x: auto;">
+curl -X POST https://car-search-api.joshm-e13.workers.dev/api/v1/chat \\<br>
+&nbsp;&nbsp;-H "Content-Type: application/json" \\<br>
+&nbsp;&nbsp;-d '{"message":"Help me find a car"}'
+      </div>
+    </div>
+
+    <footer>
+      <p>Built with Cloudflare Workers \u2022 Deployed ${(/* @__PURE__ */ new Date()).toLocaleDateString()}</p>
+      <p style="margin-top: 5px;">Version 1.0.0 \u2022 Environment: ${c.env.ENVIRONMENT}</p>
+    </footer>
+  </div>
+</body>
+</html>
+    `);
+  }
   return c.json({
     name: "Car Search Platform API",
     version: "1.0.0",
@@ -47611,53 +51028,179 @@ app.get("/", (c) => {
   });
 });
 app.route("/api/v1/listings", listingsRouter);
-app.get("/api/v1/scraper/status", (c) => {
-  return c.json({
-    success: true,
-    data: {
-      status: "operational",
-      browser: "cloudflare-puppeteer",
-      sources: ["cars.com"]
-    }
-  });
-});
-app.post("/api/v1/scraper/trigger", async (c) => {
-  const body = await c.req.json();
-  const { make, model, zipCode, radius = 100 } = body;
+app.route("/api/v1/listings", listingInsightsRouter);
+app.route("/api/v1/market", marketRouter);
+app.route("/api/v1/scraper", scraperRouter);
+app.route("/api/v1/chat", chatRouter);
+app.route("/api/v1/vin", vinRouter);
+app.post("/api/v1/admin/decode-vins", async (c) => {
+  const { batchDecodeListings: batchDecodeListings2 } = await Promise.resolve().then(() => (init_batch_decode(), batch_decode_exports));
+  const body = await c.req.json().catch(() => ({}));
+  const config4 = {
+    batchSize: body.batchSize || 10,
+    delayBetweenBatchesMs: body.delayBetweenBatchesMs || 2e3,
+    delayBetweenRequestsMs: body.delayBetweenRequestsMs || 500,
+    dryRun: body.dryRun || false
+  };
   try {
-    const { scrapeCarsComSearch: scrapeCarsComSearch2, saveListingsToDB: saveListingsToDB2 } = await Promise.resolve().then(() => (init_scraper_cars_com(), scraper_cars_com_exports));
-    console.log(`Starting scrape: ${make} ${model} near ${zipCode}`);
-    const listings2 = await scrapeCarsComSearch2(c.env, make, model, zipCode, radius);
-    if (listings2.length === 0) {
-      return c.json({
-        success: true,
-        message: "No listings found",
-        data: { count: 0 }
-      });
-    }
-    await saveListingsToDB2(c.env, listings2);
+    const result = await batchDecodeListings2(c.env, config4);
     return c.json({
       success: true,
-      message: `Scraped and saved ${listings2.length} listings`,
-      data: { count: listings2.length, make, model, zipCode }
+      data: result
     });
   } catch (error50) {
-    console.error("Scrape error:", error50);
+    console.error("Batch decode error:", error50);
     return c.json({
       success: false,
-      error: { code: "SCRAPE_ERROR", message: error50.message }
+      error: {
+        code: "BATCH_DECODE_ERROR",
+        message: error50.message || "Failed to batch decode VINs"
+      }
     }, 500);
   }
+});
+app.get("/api/v1/admin/decode-vins/status", async (c) => {
+  const result = await c.env.DB.prepare(`
+    SELECT
+      COUNT(*) as total_listings,
+      SUM(CASE WHEN engine IS NULL THEN 1 ELSE 0 END) as missing_engine,
+      SUM(CASE WHEN transmission IS NULL THEN 1 ELSE 0 END) as missing_transmission,
+      SUM(CASE WHEN drivetrain IS NULL THEN 1 ELSE 0 END) as missing_drivetrain,
+      SUM(CASE WHEN fuel_type IS NULL THEN 1 ELSE 0 END) as missing_fuel_type,
+      SUM(CASE WHEN body_type IS NULL THEN 1 ELSE 0 END) as missing_body_type,
+      SUM(CASE WHEN cylinders IS NULL THEN 1 ELSE 0 END) as missing_cylinders,
+      SUM(CASE WHEN doors IS NULL THEN 1 ELSE 0 END) as missing_doors,
+      SUM(CASE WHEN seating_capacity IS NULL THEN 1 ELSE 0 END) as missing_seating_capacity,
+      SUM(CASE WHEN base_msrp IS NULL THEN 1 ELSE 0 END) as missing_base_msrp,
+      SUM(CASE WHEN
+        engine IS NULL OR
+        transmission IS NULL OR
+        drivetrain IS NULL OR
+        fuel_type IS NULL OR
+        body_type IS NULL OR
+        cylinders IS NULL
+      THEN 1 ELSE 0 END) as listings_needing_enrichment
+    FROM listings
+    WHERE is_active = 1
+  `).first();
+  return c.json({
+    success: true,
+    data: result
+  });
 });
 var src_default = {
   fetch: app.fetch,
   // Handle background scrape jobs from the queue
   async queue(batch, env2) {
-    console.log(`Processing ${batch.messages.length} scrape jobs`);
+    console.log(`[Queue Consumer] Processing batch of ${batch.messages.length} scrape jobs`);
+    const batchStartTime = Date.now();
+    let successCount = 0;
+    let failCount = 0;
+    const { ScraperLogger: ScraperLogger2, shouldRetryError: shouldRetryError2, getRandomDelay: getRandomDelay2, delay: delay2 } = await Promise.resolve().then(() => (init_scraper_utils(), scraper_utils_exports));
     for (const message of batch.messages) {
-      const { make, model, zipCode } = message.body;
-      console.log(`Scraping ${make} ${model} near ${zipCode}`);
-      message.ack();
+      const { make, model, zipCode, radius = 100, queuedAt } = message.body;
+      const jobId = message.id;
+      const logger2 = new ScraperLogger2(env2, jobId);
+      const jobStartTime = Date.now();
+      try {
+        logger2.log(`Starting: ${make} ${model} near ${zipCode} (queued: ${queuedAt})`);
+        const { scrapeCarsComSearch: scrapeCarsComSearch2, saveListingsToDB: saveListingsToDB2 } = await Promise.resolve().then(() => (init_scraper_cars_com(), scraper_cars_com_exports));
+        if (successCount + failCount > 0) {
+          const delayMs = getRandomDelay2(2e3, 3e3);
+          logger2.log(`Rate limiting: waiting ${Math.round(delayMs)}ms`);
+          await delay2(delayMs);
+        }
+        const listings2 = await scrapeCarsComSearch2(env2, make, model, zipCode, radius);
+        const listingsFound = listings2.length;
+        if (listingsFound === 0) {
+          logger2.warn(`No listings found for ${make} ${model} near ${zipCode}`);
+          const duration4 = Date.now() - jobStartTime;
+          await logger2.recordMetrics({
+            make,
+            model,
+            zipCode,
+            listingsFound: 0,
+            listingsSaved: 0,
+            duration: duration4,
+            status: "success"
+          });
+          message.ack();
+          successCount++;
+          continue;
+        }
+        await saveListingsToDB2(env2, listings2);
+        const duration3 = Date.now() - jobStartTime;
+        logger2.log(`\u2713 Success: Scraped and saved ${listingsFound} listings in ${duration3}ms`);
+        await logger2.recordMetrics({
+          make,
+          model,
+          zipCode,
+          listingsFound,
+          listingsSaved: listingsFound,
+          duration: duration3,
+          status: "success"
+        });
+        successCount++;
+        message.ack();
+      } catch (error50) {
+        failCount++;
+        const duration3 = Date.now() - jobStartTime;
+        logger2.error(`\u2717 Failed: ${error50.message}`);
+        await logger2.recordMetrics({
+          make,
+          model,
+          zipCode,
+          listingsFound: 0,
+          listingsSaved: 0,
+          duration: duration3,
+          status: "failed",
+          error: error50.message
+        });
+        const shouldRetry = shouldRetryError2(error50);
+        if (shouldRetry && message.attempts < 3) {
+          logger2.log(`Will retry (attempt ${message.attempts + 1}/3)`);
+          message.retry();
+        } else {
+          logger2.error(`Max retries exceeded or non-retryable error, giving up`);
+          message.ack();
+        }
+      }
+    }
+    const batchDuration = Date.now() - batchStartTime;
+    console.log(`[Queue Consumer] Batch complete: ${successCount} success, ${failCount} failed, ${batchDuration}ms`);
+  },
+  // Scheduled worker for automated scraping
+  async scheduled(event, env2, ctx) {
+    console.log("[Scheduled Worker] Starting automated scrape jobs");
+    const startTime = Date.now();
+    try {
+      const scrapeTargets = [
+        { make: "Tesla", models: ["Model 3", "Model Y"] },
+        { make: "Honda", models: ["Civic", "Accord"] },
+        { make: "Toyota", models: ["Camry", "RAV4"] },
+        { make: "Ford", models: ["F-150", "Mustang"] },
+        { make: "Chevrolet", models: ["Silverado", "Malibu"] }
+      ];
+      const zipCodes = ["90001", "10001", "60601", "77001", "85001"];
+      let jobsQueued = 0;
+      for (const target of scrapeTargets) {
+        for (const model of target.models) {
+          for (const zipCode of zipCodes) {
+            await env2.SCRAPE_QUEUE.send({
+              make: target.make,
+              model,
+              zipCode,
+              radius: 100,
+              queuedAt: (/* @__PURE__ */ new Date()).toISOString()
+            });
+            jobsQueued++;
+          }
+        }
+      }
+      const duration3 = Date.now() - startTime;
+      console.log(`[Scheduled Worker] \u2713 Queued ${jobsQueued} scrape jobs in ${duration3}ms`);
+    } catch (error50) {
+      console.error("[Scheduled Worker] \u2717 Error:", error50.message);
     }
   }
 };
@@ -47711,7 +51254,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env2, _ctx, middlewareCtx
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-q4i4iH/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-OFyr05/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -47747,7 +51290,7 @@ function __facade_invoke__(request, env2, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-q4i4iH/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-OFyr05/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
