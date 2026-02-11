@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8790/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://car-search-api.joshm-e13.workers.dev/api/v1';
 
 export interface Listing {
   id: string;
