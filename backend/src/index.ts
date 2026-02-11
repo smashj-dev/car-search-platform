@@ -17,9 +17,18 @@ const app = new Hono<{ Bindings: Env }>();
 // Middleware
 app.use('*', logger());
 app.use('*', cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://carsearch.app'],
+  origin: (origin) => {
+    // Allow localhost for development
+    if (origin.startsWith('http://localhost:')) return origin;
+    // Allow all Cloudflare Pages preview deployments
+    if (origin.endsWith('.car-search-ui.pages.dev')) return origin;
+    // Allow production domain
+    if (origin === 'https://car-search-ui.pages.dev') return origin;
+    return 'http://localhost:5173'; // Default fallback
+  },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }));
 
 // Root - HTML welcome page for browsers
