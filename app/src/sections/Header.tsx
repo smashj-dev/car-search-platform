@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { Search, User, Menu, X, Heart, Car } from 'lucide-react';
+import { Search, Menu, X, Heart, Car } from 'lucide-react';
 
 interface HeaderProps {
   isScrolled: boolean;
-  onLoginClick: () => void;
+  onLoginClick?: () => void; // Optional - auth disabled for now
   onFilterClick: () => void;
 }
 
-export default function Header({ isScrolled, onLoginClick, onFilterClick }: HeaderProps) {
+export default function Header({ isScrolled, onFilterClick }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -72,23 +72,25 @@ export default function Header({ isScrolled, onLoginClick, onFilterClick }: Head
               <Search className="w-5 h-5 text-gray-700" />
             </button>
             
-            <button 
+            <button
               className={`p-2.5 rounded-full transition-all duration-300 ${
-                isScrolled 
-                  ? 'hover:bg-gray-100' 
+                isScrolled
+                  ? 'hover:bg-gray-100'
                   : 'hover:bg-white/50'
               }`}
+              title="Favorites"
             >
               <Heart className="w-5 h-5 text-gray-700" />
             </button>
-            
-            <button
+
+            {/* Auth disabled during development - will add Google OAuth later */}
+            {/* <button
               onClick={onLoginClick}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#ff4600] text-white rounded-full font-medium transition-all duration-300 hover:bg-black hover:scale-105"
             >
               <User className="w-4 h-4" />
               <span className="text-sm">Sign In</span>
-            </button>
+            </button> */}
           </div>
 
           {/* Mobile Menu Button */}
@@ -119,25 +121,17 @@ export default function Header({ isScrolled, onLoginClick, onFilterClick }: Head
                 </a>
               ))}
             </nav>
-            <div className="flex gap-3 mt-4 px-4">
-              <button 
+            <div className="mt-4 px-4">
+              <button
                 onClick={() => {
                   onFilterClick();
                   setIsMobileMenuOpen(false);
                 }}
-                className="flex-1 py-3 border border-gray-200 rounded-full text-sm font-medium hover:border-[#ff4600] hover:text-[#ff4600] transition-colors"
+                className="w-full py-3 bg-[#ff4600] text-white rounded-full text-sm font-medium hover:bg-black transition-colors"
               >
-                Search
+                Advanced Search
               </button>
-              <button
-                onClick={() => {
-                  onLoginClick();
-                  setIsMobileMenuOpen(false);
-                }}
-                className="flex-1 py-3 bg-[#ff4600] text-white rounded-full text-sm font-medium hover:bg-black transition-colors"
-              >
-                Sign In
-              </button>
+              {/* Auth disabled during development */}
             </div>
           </div>
         )}
